@@ -337,7 +337,7 @@ def _score_and_sort(
 
         ground = route.ground_hours
         flight = route.flight_hours
-        layover = 2.0 * route.num_stops
+        layover = sum(route.layover_hours) if route.layover_hours else 0.0
         conflict = sum(PROXIMITY_PENALTY.get(l.conflict_proximity, 2) for l in route.flight_legs)
 
         if speed_mode == "soonest":

@@ -386,6 +386,8 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
             "price_business": leg.price_business_usd,
             "price_source": leg.price_source,
             "layover_before": layover_before,
+            "booking_url": leg.booking_url or "",
+            "contact": leg.contact or "",
         })
 
     arrive_label = None

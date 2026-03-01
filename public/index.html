@@ -321,6 +321,13 @@ function render(data) {
             connHtml = `<div style="text-align:center;padding:4px 0;font-size:10px;color:#f39c12;font-weight:600;border-left:2px dashed #f39c12;margin-left:20px;padding-left:8px">⏳ ${t('wait_in','Wait in')} ${l.from}: <strong>${l.layover_before}h</strong></div>`;
           }
 
+          const pax = qs('passengers').value || 1;
+          const gfUrl = `https://www.google.com/travel/flights?q=${encodeURIComponent('Flights from '+l.from+' to '+l.to+' one way '+pax+' passenger')}&curr=USD`;
+          const bookUrl = l.booking_url || gfUrl;
+          const bookLabel = `${t('book_now','BOOK')} ${l.flight}`;
+          let callHtml = '';
+          if (l.contact) callHtml = `<a class="call" href="tel:${l.contact.replace(/[^+0-9]/g,'')}" style="font-size:10px;padding:6px 8px;min-height:0">${t('call','CALL')} ${l.contact}</a>`;
+
           return connHtml + `<div class="leg">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span><span class="fn">${l.flight}</span> ${l.airline}</span>
@@ -340,18 +347,17 @@ function render(data) {
               </div>
             </div>
             <div class="leg-badges">${lb}</div>
+            <div class="actions" style="margin-top:4px">
+              <a class="book" href="${bookUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:11px;padding:8px;min-height:0">${bookLabel}</a>
+              ${callHtml}
+            </div>
           </div>`;
         }).join('')}
 
         <div style="margin-top:6px;padding:4px 0;border-top:1px solid #333">
-          <div class="row"><span class="label">${t('economy','Economy')}</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
-          <div class="row"><span class="label">${t('business','Business')}</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
+          <div class="row"><span class="label">${t('economy','Economy total')}</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
+          <div class="row"><span class="label">${t('business','Business total')}</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
           <div class="row" title="${t('score_tip','wait×1.5 + ground + flight + layover×0.8 + conflict penalty')}"><span class="label">${t('score','Score')}</span><span>${r.score} (${t('lower_better','lower = faster escape')})</span></div>
-        </div>
-
-        <div class="actions">
-          ${r.booking_urls.map(u => `<a class="book" href="${u}" target="_blank" rel="noopener">${t('book_now','BOOK NOW')}</a>`).join('')}
-          ${r.contacts.map(c => `<a class="call" href="tel:${c.replace(/[^+0-9]/g,'')}">${t('call','CALL')} ${c}</a>`).join('')}
         </div>
         ${r.notes ? `<div style="color:#888;margin-top:8px;font-size:12px">${r.notes}</div>` : ''}
       </div>
