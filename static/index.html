@@ -273,6 +273,8 @@ function render(data) {
     if (r.over_budget) badges += `<span class="badge over-budget">${t('over_budget','OVER BUDGET')}</span>`;
     if (r.changed) badges += `<span class="badge changed-badge">${t('changed','CHANGED')}</span>`;
 
+    const arriveIn = r.arrive_label || r.arrive_cst || '';
+
     html += `<div class="card ${rel} ${changed}" onclick="toggle(this)">
       <div class="card-head">
         <span class="rank">#${rank}</span>
@@ -281,23 +283,28 @@ function render(data) {
           <div class="badges">${badges}</div>
         </div>
         <div class="meta">
-          <div class="time">${Math.round(r.total_hours)}h</div>
+          <div class="time" style="font-size:11px">${t('arrive_in','Arrive in')}<br><strong>${Math.round(r.total_hours)}h</strong></div>
           <div class="price">${price}</div>
         </div>
       </div>
       <div class="card-body">
-        <div class="row"><span class="label">${t('departs','Departs')}</span><span>${r.depart_ast || '—'}</span></div>
-        <div class="row"><span class="label">${t('arrives','Arrives')}</span><span>${r.arrive_cst || '—'}</span></div>
-        <div class="row"><span class="label">${t('wait_label','Wait')}</span><span>${r.wait_hours}h</span></div>
-        <div class="row"><span class="label">${t('ground','Ground')}</span><span>${r.ground_hours}h</span></div>
-        <div class="row"><span class="label">${t('flight','Flight')}</span><span>${r.flight_hours}h</span></div>
-        <div class="row"><span class="label">${t('connections','Connections')}</span><span>${r.num_stops === 0 ? t('nonstop_flight','Nonstop') : r.num_stops}</span></div>
-        <div class="row"><span class="label">${t('economy','Economy')}</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
-        <div class="row"><span class="label">${t('business','Business')}</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
-        <div class="row" title="${t('score_tip','Score = wait×1.5 + ground + flight + layover×0.8 + conflict penalty. Lower = faster escape.')}"><span class="label">${t('score','Score')}</span><span>${r.score} (${t('lower_better','lower = faster escape')})</span></div>
-        <div class="row" style="color:#666;font-size:9px"><span></span><span>${t('score_tip','wait×1.5 + ground + flight + layover×0.8 + conflict penalty')}</span></div>
-        ${r.ground.map(g => `<div class="ground">${g.from} → ${g.to} via ${g.via} (~${g.hours}h)</div>`).join('')}
-        ${r.legs.map(l => {
+        <div style="background:#0f3460;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:#aaa">
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+            <span>${t('first_flight','First flight departs')}</span><span style="color:#eee">${r.depart_ast || '—'}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+            <span>${t('land_at','Land at destination')}</span><span style="color:#2ecc71;font-weight:700">${arriveIn}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span>${t('wait_until','Wait until departure')}</span><span style="color:#f39c12">${r.wait_hours}h ${t('from_now','from now')}</span>
+          </div>
+        </div>
+
+        <div style="font-size:9px;color:#666;margin-bottom:4px;text-transform:uppercase;font-weight:600">${t('journey_breakdown','Journey breakdown')}</div>
+
+        ${r.ground.map(g => `<div class="ground">⬤ ${t('ground','Ground')}: ${g.from} → ${g.to} via ${g.via} <strong>(~${g.hours}h)</strong></div>`).join('')}
+
+        ${r.legs.map((l, li) => {
           let lb = '';
           if (l.seats_available === true) lb += `<span class="badge seats-ok">${t('seats_ok','SEATS OK')}</span>`;
           else if (l.seats_available === false) lb += `<span class="badge seats-no">${t('sold_out','SOLD OUT')}</span>`;
@@ -305,13 +312,33 @@ function render(data) {
           if (l.over_budget) lb += `<span class="badge over-budget">${t('over_budget','OVER BUDGET')}</span>`;
           if (l.price_economy) lb += `<span class="badge" style="background:#2ecc71;color:#000">$${l.price_economy.toLocaleString()}</span>`;
           if (l.price_source) lb += `<span class="badge" style="background:#555">via ${l.price_source}</span>`;
-          return `<div class="leg">
-            <span class="fn">${l.flight}</span> ${l.airline}
-            <span class="status ${l.status}">${l.status.toUpperCase()}</span><br>
-            ${l.from} → ${l.to} &nbsp; ${l.duration}h &nbsp; ${l.aircraft}
+
+          let connHtml = '';
+          if (l.connection_hours != null) {
+            connHtml = `<div style="text-align:center;padding:3px 0;font-size:9px;color:#f39c12;font-weight:600">⏳ ${t('connection_in','Connection in')} ${l.from}: ~${l.connection_hours}h</div>`;
+          }
+
+          return connHtml + `<div class="leg">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span><span class="fn">${l.flight}</span> ${l.airline}</span>
+              <span class="status ${l.status}">${l.status.toUpperCase()}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:12px">
+              <div><span style="color:#888;font-size:9px">${t('takeoff','Takeoff')}</span><br><strong>${l.depart_local || l.depart_utc || '—'}</strong></div>
+              <div style="text-align:center;color:#888;font-size:10px">→ ${l.duration}h →<br>${l.aircraft}</div>
+              <div style="text-align:right"><span style="color:#888;font-size:9px">${t('landing','Landing')}</span><br><strong>${l.arrive_local || l.arrive_utc || '—'}</strong></div>
+            </div>
+            <div style="font-size:10px;margin-top:2px;color:#aaa">${l.from} → ${l.to}</div>
             <div class="leg-badges">${lb}</div>
           </div>`;
         }).join('')}
+
+        <div style="margin-top:6px;padding:4px 0;border-top:1px solid #333">
+          <div class="row"><span class="label">${t('economy','Economy')}</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
+          <div class="row"><span class="label">${t('business','Business')}</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
+          <div class="row" title="${t('score_tip','wait×1.5 + ground + flight + layover×0.8 + conflict penalty')}"><span class="label">${t('score','Score')}</span><span>${r.score} (${t('lower_better','lower = faster escape')})</span></div>
+        </div>
+
         <div class="actions">
           ${r.booking_urls.map(u => `<a class="book" href="${u}" target="_blank" rel="noopener">${t('book_now','BOOK NOW')}</a>`).join('')}
           ${r.contacts.map(c => `<a class="call" href="tel:${c.replace(/[^+0-9]/g,'')}">${t('call','CALL')} ${c}</a>`).join('')}

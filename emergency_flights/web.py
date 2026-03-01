@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -303,6 +303,46 @@ async def api_translations(lang: str = "en"):
     return JSONResponse(get_translations(lang))
 
 
+AIRPORT_TZ = {
+    "DMM": 3, "RUH": 3, "JED": 3,
+    "IST": 3,
+    "PEK": 8, "PVG": 8, "CAN": 8, "SZX": 8, "HKG": 8,
+    "ADD": 3, "LHR": 0, "DEL": 5.5, "BKK": 7, "SIN": 8, "KUL": 8,
+    "NRT": 9, "ICN": 9, "DOH": 3, "DXB": 4,
+}
+
+TZ_LABEL = {
+    3: "AST", 8: "CST", 0: "GMT", 5.5: "IST", 7: "ICT", 9: "JST", 4: "GST",
+}
+
+
+def _utc_time_to_local(utc_time_str: str, tz_offset: float) -> str:
+    """Convert a UTC time string like '21:30' or '05:40+1' to local time string."""
+    if not utc_time_str:
+        return ""
+    plus_day = "+1" in utc_time_str
+    clean = utc_time_str.replace("+1", "").strip()
+    try:
+        parts = clean.split(":")
+        h, m = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
+    except (ValueError, IndexError):
+        return utc_time_str
+    total_min = h * 60 + m + int(tz_offset * 60)
+    if plus_day:
+        total_min += 24 * 60
+    day_offset = 0
+    while total_min >= 24 * 60:
+        total_min -= 24 * 60
+        day_offset += 1
+    while total_min < 0:
+        total_min += 24 * 60
+        day_offset -= 1
+    lh, lm = divmod(total_min, 60)
+    label = TZ_LABEL.get(tz_offset, f"UTC+{tz_offset:g}")
+    day_tag = f"+{day_offset}d" if day_offset > 0 else ""
+    return f"{lh:02d}:{lm:02d} {label}{day_tag}"
+
+
 def _route_to_dict(route: Route, now: datetime) -> dict:
     wait = 0.0
     if route.next_departure:
@@ -317,10 +357,51 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
     else:
         seats_status = "unknown"
 
+    legs_data = []
+    for idx, leg in enumerate(route.flight_legs):
+        origin_tz = AIRPORT_TZ.get(leg.origin, 3)
+        dest_tz = AIRPORT_TZ.get(leg.destination, 8)
+        depart_local = _utc_time_to_local(leg.depart_utc, origin_tz)
+        arrive_local = _utc_time_to_local(leg.arrive_utc, dest_tz)
+
+        connection_hours = None
+        if idx > 0:
+            prev = route.flight_legs[idx - 1]
+            connection_hours = _calc_connection(prev, leg)
+
+        legs_data.append({
+            "flight": leg.flight_number,
+            "airline": leg.airline,
+            "from": leg.origin,
+            "to": leg.destination,
+            "depart_utc": leg.depart_utc,
+            "arrive_utc": leg.arrive_utc,
+            "depart_local": depart_local,
+            "arrive_local": arrive_local,
+            "duration": leg.duration_hours,
+            "status": leg.status.value,
+            "aircraft": leg.aircraft,
+            "seats_available": leg.seats_available,
+            "over_budget": leg.over_budget,
+            "price_economy": leg.price_economy_usd,
+            "price_business": leg.price_business_usd,
+            "price_source": leg.price_source,
+            "connection_hours": round(connection_hours, 1) if connection_hours is not None else None,
+        })
+
+    arrive_label = None
+    if route.estimated_arrival:
+        dest_tz = 8
+        if route.flight_legs:
+            dest_tz = AIRPORT_TZ.get(route.flight_legs[-1].destination, 8)
+        tz = timezone(timedelta(hours=dest_tz))
+        arrive_label = route.estimated_arrival.astimezone(tz).strftime("%a %H:%M") + " " + TZ_LABEL.get(dest_tz, "")
+
     return {
         "name": route.name,
         "depart_ast": route.depart_ast,
         "arrive_cst": route.arrive_cst,
+        "arrive_label": arrive_label,
         "total_hours": round(route.total_hours, 1),
         "wait_hours": round(wait, 1),
         "ground_hours": round(route.ground_hours, 1),
@@ -337,30 +418,32 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
         "notes": route.notes,
         "booking_urls": route.booking_urls,
         "contacts": route.contacts,
-        "legs": [
-            {
-                "flight": leg.flight_number,
-                "airline": leg.airline,
-                "from": leg.origin,
-                "to": leg.destination,
-                "depart_utc": leg.depart_utc,
-                "arrive_utc": leg.arrive_utc,
-                "duration": leg.duration_hours,
-                "status": leg.status.value,
-                "aircraft": leg.aircraft,
-                "seats_available": leg.seats_available,
-                "over_budget": leg.over_budget,
-                "price_economy": leg.price_economy_usd,
-                "price_business": leg.price_business_usd,
-                "price_source": leg.price_source,
-            }
-            for leg in route.flight_legs
-        ],
+        "legs": legs_data,
         "ground": [
             {"from": s.origin, "to": s.destination, "via": s.via, "hours": s.estimated_hours}
             for s in route.ground_segments
         ],
     }
+
+
+def _calc_connection(prev_leg, next_leg) -> float | None:
+    """Estimate connection time between two legs in hours."""
+    try:
+        def _to_minutes(t_str: str) -> int:
+            plus_day = "+1" in t_str
+            clean = t_str.replace("+1", "").strip()
+            parts = clean.split(":")
+            h, m = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
+            return h * 60 + m + (24 * 60 if plus_day else 0)
+
+        arr = _to_minutes(prev_leg.arrive_utc)
+        dep = _to_minutes(next_leg.depart_utc)
+        diff = dep - arr
+        if diff < 0:
+            diff += 24 * 60
+        return diff / 60
+    except Exception:
+        return None
 
 
 def start_server(host: str = "0.0.0.0", port: int = 8000):
