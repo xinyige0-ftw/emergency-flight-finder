@@ -193,8 +193,16 @@ def _build_single_flight_route(
     booking_urls = [flight.booking_url] if flight.booking_url else []
     contacts = [flight.contact] if flight.contact else []
 
+    origin_name = flight.origin
+    for a in scenario.operational_airports:
+        if a.code == flight.origin:
+            origin_name = a.city
+            break
+
+    nonstop_label = "nonstop" if not ground else f"from {origin_name}"
+
     return Route(
-        name=f"{flight.flight_number} -> {dest_name} (direct)",
+        name=f"{flight.flight_number} {flight.origin}→{dest_name} ({nonstop_label})",
         ground_segments=list(ground),
         flight_legs=[flight],
         reliability=reliability,
@@ -270,8 +278,14 @@ def _build_connection_routes(
             if leg.contact and leg.contact not in contacts:
                 contacts.append(leg.contact)
 
+        origin_name = hub_flight.origin
+        for a in scenario.operational_airports:
+            if a.code == hub_flight.origin:
+                origin_name = a.city
+                break
+
         route = Route(
-            name=f"{hub_flight.flight_number}+{onward.flight_number} via {hub_name} -> {dest_name}",
+            name=f"{hub_flight.flight_number}+{onward.flight_number} {origin_name}→{hub_name}→{dest_name}",
             ground_segments=list(ground),
             flight_legs=[hub_flight, onward],
             reliability=reliability,
