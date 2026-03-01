@@ -24,6 +24,7 @@ class AlertConfig:
         twilio_sid: str = "",
         twilio_token: str = "",
         twilio_from: str = "",
+        twilio_whatsapp_from: str = "",
         phone_to: str = "",
         whatsapp_to: str = "",
         enabled: bool = True,
@@ -32,6 +33,7 @@ class AlertConfig:
         self.twilio_sid = twilio_sid or os.environ.get("TWILIO_ACCOUNT_SID", "")
         self.twilio_token = twilio_token or os.environ.get("TWILIO_AUTH_TOKEN", "")
         self.twilio_from = twilio_from or os.environ.get("TWILIO_FROM_NUMBER", "")
+        self.twilio_whatsapp_from = twilio_whatsapp_from or os.environ.get("TWILIO_WHATSAPP_FROM", "+14155238886")
         self.phone_to = phone_to or os.environ.get("EVAC_ALERT_PHONE", "")
         self.whatsapp_to = whatsapp_to or os.environ.get("EVAC_ALERT_WHATSAPP", "")
         self.enabled = enabled
@@ -166,7 +168,7 @@ async def _send_twilio_sms(config: AlertConfig, to: str, body: str):
 async def _send_twilio_whatsapp(config: AlertConfig, to: str, body: str):
     import httpx
     url = f"https://api.twilio.com/2010-04-01/Accounts/{config.twilio_sid}/Messages.json"
-    wa_from = f"whatsapp:{config.twilio_from}"
+    wa_from = f"whatsapp:{config.twilio_whatsapp_from}"
     wa_to = f"whatsapp:{to}"
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.post(
