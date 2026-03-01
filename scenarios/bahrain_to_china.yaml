@@ -1,0 +1,269 @@
+scenario:
+  name: "Bahrain to China Evacuation"
+  description: >
+    Evacuating from Bahrain during regional conflict. Bahrain airspace is closed.
+    Plan: cross King Fahd Causeway to Saudi Arabia, fly from Saudi airports to China.
+
+user:
+  passengers: 1
+  passport: "CN"
+  budget_usd: 10000
+  destination_flex: "anywhere"
+  risk_tolerance: "moderate"
+
+origin:
+  city: "Bahrain"
+  airport_code: "BAH"
+  airport_status: "closed"
+  country: "Bahrain"
+  notes: "Bahrain airspace closed due to Iranian retaliatory strikes on US Fifth Fleet HQ"
+
+destination:
+  country: "China"
+  preferred_cities:
+    - code: "SZX"
+      name: "Shenzhen"
+    - code: "CAN"
+      name: "Guangzhou"
+    - code: "PVG"
+      name: "Shanghai"
+    - code: "PEK"
+      name: "Beijing"
+    - code: "HKG"
+      name: "Hong Kong"
+
+escape_routes:
+  - type: "land"
+    from: "Bahrain"
+    to: "Dammam"
+    via: "King Fahd Causeway"
+    estimated_hours: 1.5
+    notes: "25km bridge, SAR 35 toll. Check if causeway is open before departing."
+    status: "likely_open"
+
+  - type: "domestic_flight"
+    from: "Dammam"
+    to: "Riyadh"
+    via: "Saudia / Flynas (DMM→RUH, ~50 flights/day)"
+    estimated_hours: 1.25
+    notes: "Frequent domestic flights. ~1h15m flight. Add 1h for airport. Total ~2.25h."
+    status: "likely_open"
+
+  - type: "land"
+    from: "Dammam"
+    to: "Riyadh"
+    via: "Highway 40 (drive)"
+    estimated_hours: 4.0
+    notes: "~400km, 4h drive. Backup if domestic flights are cancelled."
+    status: "likely_open"
+
+  - type: "domestic_flight"
+    from: "Riyadh"
+    to: "Jeddah"
+    via: "Saudia / Flynas / Flyadeal (RUH→JED, ~30 flights/day)"
+    estimated_hours: 2.0
+    notes: "~1h45m flight + airport time. Frequent departures."
+    status: "likely_open"
+
+operational_airports:
+  - code: "DMM"
+    name: "King Fahd International"
+    city: "Dammam"
+    country: "Saudi Arabia"
+    status: "open"
+    priority: 1
+    notes: "Closest to Bahrain. Limited international flights to China."
+
+  - code: "RUH"
+    name: "King Khalid International"
+    city: "Riyadh"
+    country: "Saudi Arabia"
+    status: "open"
+    priority: 2
+    notes: "Best option. Direct flights to China on Saudia, China Southern, Cathay, Air China."
+
+  - code: "JED"
+    name: "King Abdulaziz International"
+    city: "Jeddah"
+    country: "Saudi Arabia"
+    status: "open"
+    priority: 3
+    notes: "Saudia SV882 direct to Guangzhou. Far from conflict zone."
+
+safe_hubs:
+  - code: "IST"
+    name: "Istanbul Airport"
+    city: "Istanbul"
+    country: "Turkey"
+    notes: "Turkish airspace fully open. Daily TK flights from Riyadh. Connections to all Chinese cities."
+
+  - code: "LHR"
+    name: "Heathrow"
+    city: "London"
+    country: "United Kingdom"
+    notes: "BA operates from Riyadh. Long routing but very safe."
+
+  - code: "ADD"
+    name: "Bole International"
+    city: "Addis Ababa"
+    country: "Ethiopia"
+    notes: "Ethiopian Airlines hub. Flynas connects from Riyadh."
+
+airspace_status:
+  closed:
+    - "Bahrain"
+    - "Qatar"
+    - "UAE"
+    - "Kuwait"
+    - "Iran"
+    - "Iraq"
+    - "Israel"
+    - "Jordan"
+  open:
+    - "Saudi Arabia"
+    - "Turkey"
+    - "Egypt"
+    - "Ethiopia"
+    - "India"
+    - "China"
+  restricted:
+    - "Oman"
+
+known_flights:
+  # === DIRECT: Riyadh to China ===
+  - flight_number: "CZ5008"
+    airline: "China Southern"
+    origin: "RUH"
+    destination: "SZX"
+    days: ["Tue", "Thu", "Sat"]
+    depart_utc: "21:30"
+    arrive_utc: "05:40+1"
+    duration_hours: 8.2
+    aircraft: "A330-300"
+    contact: "+966 11 454 3388"
+    booking_url: "https://www.csair.com/en/"
+    price_economy_usd: 850
+    price_business_usd: 3500
+    conflict_proximity: "medium"
+
+  - flight_number: "SV884"
+    airline: "Saudia"
+    origin: "RUH"
+    destination: "CAN"
+    days: ["Tue", "Thu", "Sat"]
+    depart_utc: "21:40"
+    arrive_utc: "10:30+1"
+    duration_hours: 7.8
+    aircraft: "787-9"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 720
+    price_business_usd: 3200
+    conflict_proximity: "medium"
+
+  - flight_number: "CX644"
+    airline: "Cathay Pacific"
+    origin: "RUH"
+    destination: "HKG"
+    days: ["daily"]
+    depart_utc: "20:50"
+    arrive_utc: "04:55+1"
+    duration_hours: 8.1
+    aircraft: "A350-900"
+    contact: "+966 11 463 2211"
+    booking_url: "https://www.cathaypacific.com/"
+    price_economy_usd: 900
+    price_business_usd: 4200
+    conflict_proximity: "medium"
+
+  - flight_number: "CA790"
+    airline: "Air China"
+    origin: "RUH"
+    destination: "PEK"
+    days: ["Mon", "Wed", "Fri", "Sun"]
+    depart_utc: "21:05"
+    arrive_utc: "10:45+1"
+    duration_hours: 8.5
+    aircraft: "A330-300"
+    contact: "+966 11 211 1333"
+    booking_url: "https://www.airchina.com/"
+    price_economy_usd: 800
+    price_business_usd: 3800
+    conflict_proximity: "medium"
+
+  # === DIRECT: Jeddah to China ===
+  - flight_number: "SV882"
+    airline: "Saudia"
+    origin: "JED"
+    destination: "CAN"
+    days: ["Mon", "Wed", "Fri"]
+    depart_utc: "22:50"
+    arrive_utc: "12:25+1"
+    duration_hours: 8.6
+    aircraft: "787-9"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 720
+    price_business_usd: 3200
+    conflict_proximity: "low"
+
+  # === VIA ISTANBUL (safest routing) ===
+  - flight_number: "TK145"
+    airline: "Turkish Airlines"
+    origin: "RUH"
+    destination: "IST"
+    days: ["daily"]
+    depart_utc: "03:30"
+    arrive_utc: "07:40"
+    duration_hours: 4.2
+    aircraft: "A321"
+    contact: "+966 11 477 3300"
+    booking_url: "https://www.turkishairlines.com/en-sa/"
+    price_economy_usd: 350
+    price_business_usd: 1200
+    conflict_proximity: "low"
+
+  - flight_number: "TK88"
+    airline: "Turkish Airlines"
+    origin: "IST"
+    destination: "PEK"
+    days: ["daily"]
+    depart_utc: "20:05"
+    arrive_utc: "05:15+1"
+    duration_hours: 9.2
+    aircraft: "787-9"
+    contact: "+966 11 477 3300"
+    booking_url: "https://www.turkishairlines.com/en-sa/"
+    price_economy_usd: 500
+    price_business_usd: 2000
+    conflict_proximity: "low"
+
+  - flight_number: "TK26"
+    airline: "Turkish Airlines"
+    origin: "IST"
+    destination: "PVG"
+    days: ["daily"]
+    depart_utc: "17:25"
+    arrive_utc: "05:35+1"
+    duration_hours: 10.2
+    aircraft: "A350"
+    contact: "+966 11 477 3300"
+    booking_url: "https://www.turkishairlines.com/en-sa/"
+    price_economy_usd: 500
+    price_business_usd: 2000
+    conflict_proximity: "low"
+
+  - flight_number: "TK72"
+    airline: "Turkish Airlines"
+    origin: "IST"
+    destination: "CAN"
+    days: ["daily"]
+    depart_utc: "17:50"
+    arrive_utc: "06:00+1"
+    duration_hours: 10.2
+    aircraft: "A350"
+    contact: "+966 11 477 3300"
+    booking_url: "https://www.turkishairlines.com/en-sa/"
+    price_economy_usd: 500
+    price_business_usd: 2000
+    conflict_proximity: "low"
