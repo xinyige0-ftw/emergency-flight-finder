@@ -143,12 +143,18 @@ def analyze_patterns(routes: list[Route]) -> list[dict]:
                     "confidence": "high",
                 })
 
+    if not insights:
+        return [{"type": "info", "message": "No clear trend yet — keep monitoring for changes."}]
     return insights
 
 
 def wait_vs_go_recommendation(routes: list[Route], scenario: Scenario) -> dict:
     """Recommend whether to go now or wait for better options."""
-    viable = [r for r in routes if r.reliability != ReliabilityScore.LOW]
+    # Always evaluate "best" by evacuation score, not by whatever UI/API sort mode is active.
+    viable = sorted(
+        (r for r in routes if r.reliability != ReliabilityScore.LOW),
+        key=lambda r: r.score,
+    )
 
     if not viable:
         return {

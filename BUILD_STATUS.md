@@ -64,12 +64,13 @@ CLI tool with route scoring, live status checks, watch mode, all criteria as fla
 - Multi-passenger seat check
 - Budget filter (tags over-budget flights)
 
-## Phase 3 — v1.2: Alerts & Notifications — COMPLETE
+## Phase 3 — v1.2: Alerts & Notifications — COMPLETE (UI parked)
 - Twilio SMS alerts on route status changes
 - WhatsApp as alternative channel
 - Change detection: status flips, price changes, new/removed routes
 - Cooldown to prevent spam (5 min per route)
 - Set env vars: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, EVAC_ALERT_PHONE, EVAC_ALERT_WHATSAPP
+- **Parked:** Alerts tab (Test & Subscribe) hidden in UI; backend /api/alerts/* remains for future use.
 
 ## Phase 4 — v1.3: Web UI (Mobile-First) — COMPLETE
 - Mobile-first dark theme with large tap targets
@@ -97,6 +98,10 @@ CLI tool with route scoring, live status checks, watch mode, all criteria as fla
 
 ## Phase 7 — v2.0: Multi-Scenario & Community — COMPLETE
 - Multiple scenario support (/api/scenarios)
+
+## Phase 8 — v2.1: Intel UX — IN PROGRESS
+- NOTAMs shown in Intel tab (RUH, JED, DMM, IST); critical NOTAMs highlighted
+- Existing /api/notams surfaced in mobile UI
 - Crowdsourced flight/airport status reports (/api/reports)
 - Report upvoting for community validation
 - Ride-sharing board for ground segments (/api/rideshares)

@@ -16,6 +16,25 @@ console = Console(stderr=True)
 
 ALERT_COOLDOWN_SECONDS = 300  # 5 min between alerts for the same route
 STATE_FILE = Path.home() / ".evac_alert_state.json"
+SUBSCRIPTIONS_FILE = Path.home() / ".evac_alert_subscriptions.json"
+
+
+def _load_subscriptions() -> dict:
+    """Load persisted alert subscription (e.g. WhatsApp number)."""
+    if SUBSCRIPTIONS_FILE.exists():
+        try:
+            return json.loads(SUBSCRIPTIONS_FILE.read_text())
+        except Exception:
+            pass
+    return {}
+
+
+def _save_subscriptions(data: dict) -> None:
+    try:
+        SUBSCRIPTIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        SUBSCRIPTIONS_FILE.write_text(json.dumps(data))
+    except Exception:
+        pass
 
 
 class AlertConfig:
@@ -36,13 +55,23 @@ class AlertConfig:
         self.twilio_whatsapp_from = twilio_whatsapp_from or os.environ.get("TWILIO_WHATSAPP_FROM", "+14155238886")
         self.phone_to = phone_to or os.environ.get("EVAC_ALERT_PHONE", "")
         self.whatsapp_to = whatsapp_to or os.environ.get("EVAC_ALERT_WHATSAPP", "")
+        if not self.whatsapp_to:
+            subs = _load_subscriptions()
+            self.whatsapp_to = (subs.get("whatsapp") or "").strip()
         self.enabled = enabled
         self.cooldown = cooldown
 
     @property
     def is_configured(self) -> bool:
-        return bool(self.twilio_sid and self.twilio_token and self.twilio_from
-                     and (self.phone_to or self.whatsapp_to))
+        if not (self.twilio_sid and self.twilio_token):
+            return False
+        if not (self.phone_to or self.whatsapp_to):
+            return False
+        if self.phone_to and not self.twilio_from:
+            return False
+        if self.whatsapp_to and not self.twilio_whatsapp_from:
+            return False
+        return True
 
 
 def _load_state() -> dict:

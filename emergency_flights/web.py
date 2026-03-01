@@ -1,15 +1,24 @@
 """FastAPI web server — mobile-first UI for Emergency Flight Finder."""
 from __future__ import annotations
 
+import os
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+# Load .env from project root so TWILIO_* and EVAC_ALERT_* are set when running locally
+try:
+    from dotenv import load_dotenv
+    _root = Path(__file__).resolve().parent.parent
+    load_dotenv(_root / ".env")
+except ImportError:
+    pass
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from .alerts import AlertConfig, detect_changes, send_alerts
+from .alerts import AlertConfig, detect_changes, send_alerts, _send_twilio_whatsapp, _send_twilio_sms, _save_subscriptions
 from .crowdsource import fetch_all_crowdsource
 from .community import (
     CommunityReport, RideShare, get_reports, get_rideshares, get_translations,
@@ -296,6 +305,62 @@ async def api_post_ride(request: Request,
     )
     post_rideshare(ride)
     return JSONResponse({"ok": True, "ride": ride.to_dict()})
+
+
+@app.post("/api/alerts/test")
+async def api_test_alert(request: Request):
+    ip = _client_ip(request)
+    if not _rate_limit_check(ip):
+        return JSONResponse({"ok": False, "error": "Rate limited. Try again in a minute."}, status_code=429)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"ok": False, "error": "Invalid JSON"}, status_code=400)
+
+    phone = (body.get("phone") or "").strip().replace(" ", "")[:20]
+    channel = (body.get("channel") or "whatsapp").strip()
+
+    if not phone or not phone.startswith("+"):
+        return JSONResponse({"ok": False, "error": "Phone must start with + and country code (e.g. +13125551234)"}, status_code=400)
+
+    config = AlertConfig()
+    if not config.twilio_sid or not config.twilio_token:
+        return JSONResponse({"ok": False, "error": "Twilio not configured on server. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in .env or environment."}, status_code=500)
+
+    if channel == "whatsapp" and not config.twilio_whatsapp_from:
+        return JSONResponse({"ok": False, "error": "WhatsApp sender not configured. Set TWILIO_WHATSAPP_FROM (e.g. +14155238886 for sandbox)."}, status_code=500)
+
+    msg = "EVAC ALERT TEST: You will receive WhatsApp alerts when flight statuses change, prices drop, or new routes appear."
+
+    try:
+        if channel == "whatsapp":
+            await _send_twilio_whatsapp(config, phone, msg)
+        else:
+            await _send_twilio_sms(config, phone, msg)
+        return JSONResponse({"ok": True, "message": f"Test {channel} sent to {phone}"})
+    except Exception as e:
+        err = str(e).strip()[:300]
+        return JSONResponse({"ok": False, "error": err}, status_code=500)
+
+
+@app.post("/api/alerts/subscribe")
+async def api_subscribe_alerts(request: Request):
+    ip = _client_ip(request)
+    if not _rate_limit_check(ip):
+        return JSONResponse({"ok": False, "error": "Rate limited"}, status_code=429)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"ok": False, "error": "Invalid JSON"}, status_code=400)
+
+    phone = (body.get("phone") or "").strip()[:20]
+    if not phone or not phone.startswith("+"):
+        return JSONResponse({"ok": False, "error": "Phone must start with + and country code"}, status_code=400)
+
+    # Persist so alerts are sent to this number (survives restarts; used by AlertConfig)
+    _save_subscriptions({"whatsapp": phone})
+    os.environ["EVAC_ALERT_WHATSAPP"] = phone
+    return JSONResponse({"ok": True, "message": f"WhatsApp alerts will be sent to {phone} on route changes."})
 
 
 @app.get("/api/translations")

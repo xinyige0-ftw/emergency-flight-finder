@@ -9,3 +9,4 @@ python-dateutil>=2.8
 fastapi>=0.100
 uvicorn>=0.20
 supabase>=2.0
+python-dotenv>=1.0

@@ -130,6 +130,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
   <div class="tab" onclick="showTab('news')" id="tab_news_label">News</div>
   <div class="tab" onclick="showTab('community')" id="tab_community_label">Community</div>
   <div class="tab" onclick="showTab('intel')" id="tab_intel_label">Intel</div>
+  <div class="tab" onclick="showTab('alerts')" id="tab_alerts_label">Alerts</div>
 </div>
 
 <div id="tab-plan" class="tab-content active">
@@ -149,8 +150,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
 </div>
 
 <div id="tab-intel" class="tab-content">
+  <div class="section" id="notamsSection"><div class="empty" id="notamsPlaceholder">Loading NOTAMs...</div></div>
   <div class="section" id="patternsSection"><div class="empty">Collecting data...</div></div>
   <div class="section" id="historySection"></div>
+</div>
+
+<div id="tab-alerts" class="tab-content">
+  <div class="section">
+    <h2 id="alerts_title">Get Notified</h2>
+    <div style="background:#16213e;border-radius:6px;padding:10px;margin-bottom:8px;border-left:3px solid #2ecc71">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px" id="alerts_what_title">What you'll receive</div>
+      <ul style="font-size:11px;padding-left:16px;color:#ccc;line-height:1.6">
+        <li id="alert_item_1">Flight status changes (cancelled, delayed, operating)</li>
+        <li id="alert_item_2">Price drops or increases &gt; $50</li>
+        <li id="alert_item_3">New routes becoming available</li>
+        <li id="alert_item_4">Routes disappearing or sold out</li>
+        <li id="alert_item_5">Airspace reopening / closure alerts</li>
+      </ul>
+    </div>
+
+    <div style="background:#16213e;border-radius:6px;padding:10px;margin-bottom:8px;border-left:3px solid #3498db">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px" id="alerts_setup_title">Setup WhatsApp Alerts</div>
+      <ol style="font-size:11px;padding-left:16px;color:#ccc;line-height:1.8">
+        <li id="alerts_step_1">Open WhatsApp on your phone</li>
+        <li id="alerts_step_2">Send <strong style="color:#2ecc71;user-select:all">join spoken-yet</strong> to <strong style="color:#eee;user-select:all">+1 (415) 523-8886</strong></li>
+        <li id="alerts_step_3">Wait for confirmation reply from Twilio</li>
+        <li id="alerts_step_4">Contact the operator to add your number for live alerts</li>
+      </ol>
+      <div style="margin-top:6px;font-size:10px;color:#888" id="alerts_note">Note: This uses the Twilio sandbox. You must complete step 2 before receiving any messages.</div>
+    </div>
+  </div>
 </div>
 
 <div class="warn" id="warnText">Flight data changes rapidly during conflict. Always confirm with the airline.</div>
@@ -473,7 +502,16 @@ function renderCrowdsource(data) {
   let hasItems = false;
   if (data.x && data.x.length) {
     hasItems = true;
-    data.x.forEach(i => { html += `<div class="report"><strong>X</strong> ${esc(i.text)}${i.link ? ' <a href="'+esc(i.link)+'" target="_blank">→</a>' : ''}</div>`; });
+    data.x.forEach(i => {
+      const by = i.author ? ` <span style="color:#888">@${esc(i.author)}</span>` : '';
+      html += `<div class="report"><strong>X</strong>${by} ${esc(i.text)}${i.link ? ' <a href="'+esc(i.link)+'" target="_blank" onclick="event.stopPropagation()">→</a>' : ''}</div>`;
+    });
+  } else {
+    html += `<div class="insight" style="border-color:#f39c12">
+      <strong>X / Twitter:</strong> No posts loaded.
+      Real data requires a <a href="https://developer.x.com" target="_blank" style="color:#3498db">Twitter API Bearer Token</a>.
+      Set <code style="background:#0f3460;padding:1px 4px;border-radius:2px">TWITTER_BEARER_TOKEN</code> in <code style="background:#0f3460;padding:1px 4px;border-radius:2px">.env</code> to enable live posts.
+    </div>`;
   }
   if (data.embassy && data.embassy.length) {
     hasItems = true;
@@ -498,13 +536,87 @@ function toggle(card) { card.querySelector('.card-body').classList.toggle('open'
 
 function showTab(name) {
   document.querySelectorAll('.tab').forEach((el,i) => {
-    const tabs = ['plan','news','community','intel'];
+    const tabs = ['plan','news','community','intel','alerts'];
     el.classList.toggle('active', tabs[i] === name);
   });
   document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
   const el = qs('tab-'+name);
   if (el) el.classList.add('active');
-  if (name === 'intel') loadHistory();
+  if (name === 'intel') { loadHistory(); loadNotams(); }
+}
+
+async function testAlert() {
+  const phone = qs('alertPhone').value.trim().replace(/\s/g, '');
+  const res = qs('alertResult');
+  if (!phone || !phone.startsWith('+')) {
+    res.innerHTML = '<span style="color:#c0392b">Enter phone with country code, e.g. +13125551234</span>';
+    return;
+  }
+  res.innerHTML = '<span style="color:#888">Sending...</span>';
+  try {
+    const resp = await fetch(`${API}/alerts/test`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({phone, channel: 'whatsapp'}),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok && data.ok) {
+      res.innerHTML = '<span style="color:#2ecc71">Sent! Check your WhatsApp.</span>';
+    } else {
+      const err = data.error || resp.statusText || 'Request failed';
+      res.innerHTML = `<span style="color:#c0392b">${err}</span>`;
+    }
+  } catch(e) {
+    res.innerHTML = '<span style="color:#c0392b">Network error. Is the server running? Try again.</span>';
+  }
+}
+
+async function subscribeAlerts() {
+  const phone = qs('alertPhone').value.trim().replace(/\s/g, '');
+  const res = qs('subscribeResult');
+  if (!phone || !phone.startsWith('+')) {
+    res.innerHTML = '<span style="color:#c0392b">Enter your phone number first</span>';
+    return;
+  }
+  res.innerHTML = '<span style="color:#888">Subscribing...</span>';
+  try {
+    const resp = await fetch(`${API}/alerts/subscribe`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({phone}),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok && data.ok) {
+      res.innerHTML = '<span style="color:#2ecc71">Subscribed! You will get alerts when routes change.</span>';
+    } else {
+      const err = data.error || resp.statusText || 'Request failed';
+      res.innerHTML = `<span style="color:#c0392b">${err}</span>`;
+    }
+  } catch(e) {
+    res.innerHTML = '<span style="color:#c0392b">Network error. Try again.</span>';
+  }
+}
+
+async function loadNotams() {
+  const el = qs('notamsSection');
+  if (!el) return;
+  try {
+    const res = await fetch(`${API}/notams?airports=RUH,JED,DMM,IST`);
+    const data = await res.json();
+    const notams = data.notams || [];
+    let html = '<h2>' + (t('notams_title','NOTAMs (Aviation notices)') || 'NOTAMs (Aviation notices)') + '</h2>';
+    if (notams.length === 0) {
+      html += '<div class="empty">' + (t('no_notams','No NOTAMs retrieved for RUH, JED, DMM, IST') || 'No NOTAMs retrieved for RUH, JED, DMM, IST') + '</div>';
+    } else {
+      notams.forEach(n => {
+        const cls = n.critical ? 'insight trend_down' : 'insight';
+        html += `<div class="${cls}"><strong>${n.airport || '?'}</strong> ${esc(n.text || '')}</div>`;
+      });
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<h2>' + (t('notams_title','NOTAMs (Aviation notices)') || 'NOTAMs') + '</h2><div class="empty">' + (t('notams_error','Could not load NOTAMs') || 'Could not load NOTAMs') + '</div>';
+  }
 }
 
 async function loadHistory() {
@@ -552,6 +664,10 @@ function applyTranslationsToUI() {
   qs('tab_news_label').textContent = t('news', 'News');
   qs('tab_community_label').textContent = t('community', 'Community');
   qs('tab_intel_label').textContent = t('intel', 'Intel');
+  qs('tab_alerts_label').textContent = t('alerts_tab', 'Alerts');
+  qs('alerts_title').textContent = t('alerts_title', 'Get Notified');
+  qs('alerts_what_title').textContent = t('alerts_what', 'What you\'ll receive');
+  qs('alerts_setup_title').textContent = t('alerts_setup', 'Setup WhatsApp Alerts');
   qs('opt_balanced').textContent = t('balanced', 'Balanced');
   qs('opt_soonest').textContent = t('soonest', 'Soonest');
   qs('opt_shortest').textContent = t('shortest', 'Shortest');
