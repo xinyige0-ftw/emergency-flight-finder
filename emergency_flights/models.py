@@ -102,6 +102,7 @@ class Route(BaseModel):
     estimated_arrival: Optional[datetime] = None
     price_economy_usd: Optional[float] = None
     price_business_usd: Optional[float] = None
+    layover_hours: list[float] = Field(default_factory=list)
     booking_urls: list[str] = Field(default_factory=list)
     contacts: list[str] = Field(default_factory=list)
     previous_status: Optional[str] = None

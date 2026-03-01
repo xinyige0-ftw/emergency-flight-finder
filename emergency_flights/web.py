@@ -364,10 +364,9 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
         depart_local = _utc_time_to_local(leg.depart_utc, origin_tz)
         arrive_local = _utc_time_to_local(leg.arrive_utc, dest_tz)
 
-        connection_hours = None
-        if idx > 0:
-            prev = route.flight_legs[idx - 1]
-            connection_hours = _calc_connection(prev, leg)
+        layover_before = None
+        if idx > 0 and idx - 1 < len(route.layover_hours):
+            layover_before = route.layover_hours[idx - 1]
 
         legs_data.append({
             "flight": leg.flight_number,
@@ -386,7 +385,7 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
             "price_economy": leg.price_economy_usd,
             "price_business": leg.price_business_usd,
             "price_source": leg.price_source,
-            "connection_hours": round(connection_hours, 1) if connection_hours is not None else None,
+            "layover_before": layover_before,
         })
 
     arrive_label = None
@@ -426,24 +425,6 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
     }
 
 
-def _calc_connection(prev_leg, next_leg) -> float | None:
-    """Estimate connection time between two legs in hours."""
-    try:
-        def _to_minutes(t_str: str) -> int:
-            plus_day = "+1" in t_str
-            clean = t_str.replace("+1", "").strip()
-            parts = clean.split(":")
-            h, m = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
-            return h * 60 + m + (24 * 60 if plus_day else 0)
-
-        arr = _to_minutes(prev_leg.arrive_utc)
-        dep = _to_minutes(next_leg.depart_utc)
-        diff = dep - arr
-        if diff < 0:
-            diff += 24 * 60
-        return diff / 60
-    except Exception:
-        return None
 
 
 def start_server(host: str = "0.0.0.0", port: int = 8000):

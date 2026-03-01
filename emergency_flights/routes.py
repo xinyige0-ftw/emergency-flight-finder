@@ -294,9 +294,10 @@ def _build_connection_routes(
             estimated_arrival=estimated_arrival,
             price_economy_usd=total_economy,
             price_business_usd=total_business,
+            layover_hours=[round(layover_hours, 1)] if layover_hours > 0 else [],
             booking_urls=booking_urls,
             contacts=contacts,
-            notes=f"Layover in {hub_name}: ~{layover_hours:.1f}h" if layover_hours > 0 else "",
+            notes="",
         )
         routes.append(route)
 

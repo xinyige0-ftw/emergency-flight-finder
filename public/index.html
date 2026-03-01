@@ -317,8 +317,8 @@ function render(data) {
           if (l.price_source) lb += `<span class="badge" style="background:#555">via ${l.price_source}</span>`;
 
           let connHtml = '';
-          if (l.connection_hours != null) {
-            connHtml = `<div style="text-align:center;padding:3px 0;font-size:9px;color:#f39c12;font-weight:600">⏳ ${t('connection_in','Connection in')} ${l.from}: ~${l.connection_hours}h</div>`;
+          if (l.layover_before != null) {
+            connHtml = `<div style="text-align:center;padding:4px 0;font-size:10px;color:#f39c12;font-weight:600;border-left:2px dashed #f39c12;margin-left:20px;padding-left:8px">⏳ ${t('wait_in','Wait in')} ${l.from}: <strong>${l.layover_before}h</strong></div>`;
           }
 
           return connHtml + `<div class="leg">
@@ -326,12 +326,19 @@ function render(data) {
               <span><span class="fn">${l.flight}</span> ${l.airline}</span>
               <span class="status ${l.status}">${l.status.toUpperCase()}</span>
             </div>
-            <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:12px">
-              <div><span style="color:#888;font-size:9px">${t('takeoff','Takeoff')}</span><br><strong>${l.depart_local || l.depart_utc || '—'}</strong></div>
-              <div style="text-align:center;color:#888;font-size:10px">→ ${l.duration}h →<br>${l.aircraft}</div>
-              <div style="text-align:right"><span style="color:#888;font-size:9px">${t('landing','Landing')}</span><br><strong>${l.arrive_local || l.arrive_utc || '—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:12px">
+              <div>
+                <strong style="font-size:13px">${l.from}</strong><br>
+                <span style="color:#888;font-size:9px">${t('takeoff','Takeoff')}</span><br>
+                <span style="color:#eee">${l.depart_local || l.depart_utc || '—'}</span>
+              </div>
+              <div style="text-align:center;color:#888;font-size:10px;align-self:center">→ ${l.duration}h →<br><span style="font-size:9px">${l.aircraft}</span></div>
+              <div style="text-align:right">
+                <strong style="font-size:13px">${l.to}</strong><br>
+                <span style="color:#888;font-size:9px">${t('landing','Landing')}</span><br>
+                <span style="color:#eee">${l.arrive_local || l.arrive_utc || '—'}</span>
+              </div>
             </div>
-            <div style="font-size:10px;margin-top:2px;color:#aaa">${l.from} → ${l.to}</div>
             <div class="leg-badges">${lb}</div>
           </div>`;
         }).join('')}
