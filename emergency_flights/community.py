@@ -2,13 +2,18 @@
 from __future__ import annotations
 
 import json
-import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 from rich.console import Console
+
+from .supabase_store import is_configured as _supabase_configured
+from .supabase_store import reports_load as _reports_load_sb
+from .supabase_store import reports_save as _reports_save_sb
+from .supabase_store import reports_upvote as _reports_upvote_sb
+from .supabase_store import rides_load as _rides_load_sb
+from .supabase_store import rides_save as _rides_save_sb
 
 console = Console(stderr=True)
 
@@ -109,9 +114,12 @@ class CommunityReport:
 
 
 def submit_report(report: CommunityReport) -> CommunityReport:
-    """Submit a crowdsourced flight/airport report."""
+    """Submit a crowdsourced flight/airport report (Supabase if configured, else file)."""
+    d = report.to_dict()
+    if _supabase_configured() and _reports_save_sb(d):
+        return report
     reports = _load_reports()
-    reports.append(report.to_dict())
+    reports.append(d)
     if len(reports) > 1000:
         reports = reports[-1000:]
     _save_reports(reports)
@@ -124,32 +132,35 @@ def get_reports(
     max_age_hours: float = 24,
     limit: int = 50,
 ) -> list[CommunityReport]:
-    """Get recent community reports, optionally filtered."""
-    reports = _load_reports()
+    """Get recent community reports (Supabase + file merge when both used)."""
+    reports = _reports_load_sb() if _supabase_configured() else []
+    if not reports:
+        reports = _load_reports()
     now = datetime.now(timezone.utc)
     cutoff = now.timestamp() - (max_age_hours * 3600)
-
     results = []
     for r in reversed(reports):
         try:
-            ts = datetime.fromisoformat(r["timestamp"]).timestamp()
+            ts_str = (r.get("timestamp") or "1970-01-01").replace("Z", "+00:00")
+            ts = datetime.fromisoformat(ts_str).timestamp()
         except Exception:
             continue
         if ts < cutoff:
             continue
-        if airport and r.get("airport", "").upper() != airport.upper():
+        if airport and (r.get("airport") or "").upper() != airport.upper():
             continue
-        if flight and r.get("flight", "").upper() != flight.upper():
+        if flight and (r.get("flight") or "").upper() != flight.upper():
             continue
         results.append(CommunityReport.from_dict(r))
         if len(results) >= limit:
             break
-
     return results
 
 
 def upvote_report(report_id: str) -> bool:
-    """Upvote a community report to signal agreement."""
+    """Upvote a community report (Supabase if configured, else file)."""
+    if _supabase_configured() and _reports_upvote_sb(report_id):
+        return True
     reports = _load_reports()
     for r in reports:
         if r.get("id") == report_id:
@@ -194,28 +205,38 @@ class RideShare:
 
     @classmethod
     def from_dict(cls, d: dict) -> RideShare:
-        return cls(**{k: d.get(k, "") for k in
-                      ["ride_id", "origin", "destination", "departure_time",
-                       "seats", "contact", "notes", "posted"]})
+        return cls(
+            ride_id=d.get("ride_id") or d.get("id", ""),
+            origin=d.get("origin", ""),
+            destination=d.get("destination", ""),
+            departure_time=d.get("departure_time", ""),
+            seats=d.get("seats", 1),
+            contact=d.get("contact", ""),
+            notes=d.get("notes", ""),
+            posted=d.get("posted", ""),
+        )
 
 
 RIDES_FILE = Path.home() / ".evac_rideshares.json"
 
 
 def post_rideshare(ride: RideShare) -> RideShare:
+    d = ride.to_dict()
+    if _supabase_configured() and _rides_save_sb(d):
+        return ride
     rides = _load_json(RIDES_FILE)
-    rides.append(ride.to_dict())
+    rides.append(d)
     _save_json(RIDES_FILE, rides[-200:])
     return ride
 
 
 def get_rideshares(origin: str = "", destination: str = "", limit: int = 20) -> list[RideShare]:
-    rides = _load_json(RIDES_FILE)
+    rides = _rides_load_sb() if _supabase_configured() else _load_json(RIDES_FILE)
     results = []
     for r in reversed(rides):
-        if origin and r.get("origin", "").lower() != origin.lower():
+        if origin and (r.get("origin") or "").lower() != origin.lower():
             continue
-        if destination and r.get("destination", "").lower() != destination.lower():
+        if destination and (r.get("destination") or "").lower() != destination.lower():
             continue
         results.append(RideShare.from_dict(r))
         if len(results) >= limit:

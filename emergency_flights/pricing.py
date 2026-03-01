@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import re
-from datetime import datetime, timezone
 from typing import Optional
 
 import httpx
@@ -13,6 +13,8 @@ from .models import FlightLeg
 
 console = Console(stderr=True)
 
+PRICE_API_URL = os.environ.get("PRICE_API_URL", "").strip()
+
 GOOGLE_FLIGHTS_URL = "https://www.google.com/travel/flights"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -21,29 +23,64 @@ HEADERS = {
 }
 
 
+async def _fetch_price_api(flights: list[FlightLeg]) -> dict[str, dict]:
+    """Optional: POST to PRICE_API_URL; expect JSON { prices: [ { flight_number, price_economy_usd?, price_business_usd?, seats_available? } ] }."""
+    if not PRICE_API_URL:
+        return {}
+    try:
+        payload = [{"flight_number": f.flight_number, "origin": f.origin, "destination": f.destination} for f in flights]
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.post(PRICE_API_URL, json={"flights": payload})
+            if r.status_code != 200:
+                return {}
+            data = r.json()
+            prices = data.get("prices") or []
+            return {str(p.get("flight_number", "")).upper(): p for p in prices if p.get("flight_number")}
+    except Exception as e:
+        console.print(f"[dim]Price API failed: {e}[/dim]")
+        return {}
+
+
 async def check_prices_and_seats(
     flights: list[FlightLeg],
     passengers: int = 1,
     live: bool = True,
 ) -> list[FlightLeg]:
-    """Check live prices and seat availability for all flights."""
+    """Check live prices and seat availability (optional PRICE_API_URL, then scrapers)."""
     if not live:
         console.print("[dim]Skipping price checks (offline mode)[/dim]")
         return flights
 
     console.print("[bold]Checking prices & seat availability...[/bold]")
-    tasks = [_check_single_flight(f, passengers) for f in flights]
+    api_prices = await _fetch_price_api(flights)
+    updated: list[FlightLeg] = []
+    for f in flights:
+        key = f.flight_number.upper()
+        if key in api_prices:
+            p = api_prices[key]
+            if p.get("price_economy_usd") is not None:
+                f.price_economy_usd = float(p["price_economy_usd"])
+            if p.get("price_business_usd") is not None:
+                f.price_business_usd = float(p["price_business_usd"])
+            if p.get("seats_available") is not None:
+                f.seats_available = bool(p["seats_available"])
+            f.price_source = p.get("source") or "price_api"
+            updated.append(f)
+            continue
+        updated.append(f)
+
+    tasks = [_check_single_flight(f, passengers) for f in updated]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    updated = []
-    for flight, result in zip(flights, results):
+    out = []
+    for flight, result in zip(updated, results):
         if isinstance(result, Exception):
             console.print(f"  [dim]Price check failed for {flight.flight_number}: {result}[/dim]")
-            updated.append(flight)
+            out.append(flight)
         else:
-            updated.append(result)
+            out.append(result)
 
-    return updated
+    return out
 
 
 async def _check_single_flight(flight: FlightLeg, passengers: int) -> FlightLeg:

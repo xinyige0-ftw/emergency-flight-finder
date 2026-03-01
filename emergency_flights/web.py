@@ -1,13 +1,16 @@
 """FastAPI web server — mobile-first UI for Emergency Flight Finder."""
 from __future__ import annotations
 
+import time
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from .alerts import AlertConfig, detect_changes, send_alerts
+from .crowdsource import fetch_all_crowdsource
 from .community import (
     CommunityReport, RideShare, get_reports, get_rideshares, get_translations,
     list_scenarios_available, post_rideshare, submit_report, upvote_report,
@@ -29,6 +32,24 @@ SCENARIOS_DIR = Path(__file__).parent.parent / "scenarios"
 STATIC_DIR = Path(__file__).parent.parent / "static"
 
 _previous_routes: list[Route] = []
+
+# Rate limit: 10 POSTs per minute per IP
+_rate_limit: dict[str, list[float]] = defaultdict(list)
+RATE_LIMIT_WINDOW = 60.0
+RATE_LIMIT_MAX = 10
+
+
+def _rate_limit_check(ip: str) -> bool:
+    now = time.time()
+    _rate_limit[ip] = [t for t in _rate_limit[ip] if now - t < RATE_LIMIT_WINDOW]
+    if len(_rate_limit[ip]) >= RATE_LIMIT_MAX:
+        return False
+    _rate_limit[ip].append(now)
+    return True
+
+
+def _client_ip(request: Request) -> str:
+    return (request.headers.get("x-forwarded-for") or request.client.host or "unknown").split(",")[0].strip()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -157,6 +178,16 @@ async def get_history():
     return JSONResponse({"conflicts": get_historical_context()})
 
 
+@app.get("/api/crowdsource")
+async def get_crowdsource():
+    """External crowdsource: X (Nitter RSS), Telegram RSS, embassy advisories."""
+    try:
+        data = await fetch_all_crowdsource(max_per_source=15)
+    except Exception:
+        data = {"x": [], "telegram": [], "embassy": []}
+    return JSONResponse(data)
+
+
 @app.get("/api/news")
 async def get_news(scenario: str = "bahrain_to_china"):
     path = SCENARIOS_DIR / f"{scenario}.yaml"
@@ -199,7 +230,7 @@ async def api_get_reports(airport: str = "", flight: str = "", hours: float = 24
 
 
 @app.post("/api/reports")
-async def api_submit_report(
+async def api_submit_report(request: Request,
     report_type: str = "flight_status",
     flight: str = "",
     airport: str = "",
@@ -207,6 +238,15 @@ async def api_submit_report(
     status: str = "",
     reporter: str = "anonymous",
 ):
+    ip = _client_ip(request)
+    if not _rate_limit_check(ip):
+        return JSONResponse({"ok": False, "error": "Too many requests"}, status_code=429)
+    report_type = (report_type or "flight_status")[:50]
+    flight = (flight or "")[:20]
+    airport = (airport or "")[:20]
+    message = (message or "")[:2000]
+    status = (status or "")[:30]
+    reporter = (reporter or "anonymous")[:100]
     report = CommunityReport(
         reporter=reporter, report_type=report_type,
         flight_number=flight, airport=airport,
@@ -217,7 +257,10 @@ async def api_submit_report(
 
 
 @app.post("/api/reports/{report_id}/upvote")
-async def api_upvote(report_id: str):
+async def api_upvote(request: Request, report_id: str):
+    if not _rate_limit_check(_client_ip(request)):
+        return JSONResponse({"ok": False, "error": "Too many requests"}, status_code=429)
+    report_id = (report_id or "")[:50]
     ok = upvote_report(report_id)
     return JSONResponse({"ok": ok})
 
@@ -229,7 +272,7 @@ async def api_get_rides(origin: str = "", destination: str = ""):
 
 
 @app.post("/api/rideshares")
-async def api_post_ride(
+async def api_post_ride(request: Request,
     origin: str = "",
     destination: str = "",
     departure_time: str = "",
@@ -237,6 +280,15 @@ async def api_post_ride(
     contact: str = "",
     notes: str = "",
 ):
+    ip = _client_ip(request)
+    if not _rate_limit_check(ip):
+        return JSONResponse({"ok": False, "error": "Too many requests"}, status_code=429)
+    origin = (origin or "")[:200]
+    destination = (destination or "")[:200]
+    departure_time = (departure_time or "")[:50]
+    seats = max(1, min(10, seats))
+    contact = (contact or "")[:50]
+    notes = (notes or "")[:500]
     ride = RideShare(
         origin=origin, destination=destination,
         departure_time=departure_time, seats=seats,

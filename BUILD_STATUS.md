@@ -129,12 +129,18 @@ CLI tool with route scoring, live status checks, watch mode, all criteria as fla
 
 ---
 
-## Remaining Tasks (not P0)
+## P1/P2 Completed (this round)
 
-| Priority | Task | Notes |
-|----------|------|-------|
-| **P1** | External crowdsource data | Integrate X/Twitter search, Telegram evacuation groups, FR24 community, embassy feeds. Not P0. |
-| **P1** | Persist community data | Replace file-based storage with DB (Supabase/Firebase) so reports & rides persist on Vercel. |
-| **P2** | Real price scraping | Airlines block scrapers; need headless browser or booking API partners for live prices. |
-| **P2** | Service worker | Cache new API endpoints (news, reports, rides) for offline. |
-| **P2** | Hardening | Rate limits, input validation on POST /api/reports and /api/rideshares. |
+| Item | What was built |
+|------|----------------|
+| **P1 External crowdsource** | `crowdsource.py`: X via Nitter RSS, Telegram via TELEGRAM_RSS_URLS, embassy/travel RSS (US, UK). `/api/crowdsource`. UI: Community tab shows X / Embassy / Telegram. |
+| **P1 Persist community** | `supabase_store.py`: when SUPABASE_URL + SUPABASE_KEY set, reports and rides read/write to Supabase. `supabase_schema.sql` for tables + RLS. |
+| **P2 Service worker** | `sw.js` v2: only cache API responses when `r.ok`; bump cache version. |
+| **P2 Hardening** | Rate limit 10 POSTs/min per IP on `/api/reports`, `/api/reports/{id}/upvote`, `/api/rideshares`. Validation: message ≤2000, reporter ≤100, seats 1–10, etc. |
+| **P2 Price API hook** | Optional `PRICE_API_URL`: POST `{ "flights": [...] }`, expect `{ "prices": [ { "flight_number", "price_economy_usd", ... } ] }`. Applied before scrapers. |
+
+## Remaining (future)
+
+| Priority | Task |
+|----------|------|
+| **P2** | Real price scraping (headless or paid API) if PRICE_API_URL not used. |
