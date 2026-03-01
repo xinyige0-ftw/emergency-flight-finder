@@ -10,59 +10,116 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;color:#eee;font-size:15px;padding-bottom:80px}
-.top{background:#e94560;padding:16px;text-align:center}
-.top h1{font-size:18px;font-weight:700}
-.top .sub{font-size:12px;opacity:.8;margin-top:4px}
+
+.top{background:#e94560;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+.top h1{font-size:16px;font-weight:700;letter-spacing:.5px}
+.top .lang{background:rgba(255,255,255,.2);border:none;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600}
+.sub-bar{background:#c0392b;padding:6px 16px;text-align:center;font-size:12px;opacity:.9}
+
+/* Recommendation banner */
+.reco{padding:14px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:10px}
+.reco .icon{font-size:24px}
+.reco .text{flex:1}
+.reco .text .reason{font-weight:400;font-size:12px;opacity:.85;margin-top:2px}
+.reco.go{background:#27ae60}.reco.wait{background:#f39c12;color:#000}.reco.wait_short{background:#e67e22}
+
+/* Sticky filter bar */
 .bar{display:flex;gap:6px;padding:8px 12px;background:#16213e;overflow-x:auto;white-space:nowrap;position:sticky;top:0;z-index:10}
 .bar select,.bar button{background:#0f3460;color:#fff;border:1px solid #333;border-radius:6px;padding:6px 10px;font-size:13px}
 .bar button{background:#e94560;border:none;font-weight:600}
 .bar button.on{background:#2ecc71}
+
 .section{padding:12px}
-.section h2{font-size:14px;color:#e94560;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
-.airspace{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.section h2{font-size:13px;color:#e94560;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.airspace{display:flex;flex-wrap:wrap;gap:4px}
 .tag{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
 .tag.closed{background:#c0392b}.tag.open{background:#27ae60}.tag.restricted{background:#f39c12;color:#000}
-.card{background:#16213e;border-radius:10px;margin-bottom:12px;overflow:hidden;border-left:4px solid #f39c12}
+
+/* Visa alerts */
+.visa-alert{background:#1a1a2e;border:1px solid #f39c12;border-radius:6px;padding:8px 12px;margin:4px 0;font-size:12px}
+.visa-alert.ok{border-color:#27ae60}.visa-alert.warn{border-color:#c0392b}
+
+/* Route cards */
+.card{background:#16213e;border-radius:10px;margin:0 12px 10px;overflow:hidden;border-left:4px solid #f39c12}
 .card.high{border-color:#27ae60}.card.low{border-color:#c0392b}.card.changed{animation:pulse .5s 3}
 @keyframes pulse{0%,100%{border-color:#e94560}50%{border-color:#fff}}
-.card-head{display:flex;justify-content:space-between;align-items:center;padding:12px;cursor:pointer}
-.card-head .rank{font-size:22px;font-weight:700;color:#e94560;margin-right:10px}
-.card-head .name{flex:1;font-size:14px;font-weight:600}
-.card-head .meta{text-align:right;font-size:12px}
+.card-head{display:flex;align-items:center;padding:12px;cursor:pointer;gap:8px}
+.card-head .rank{font-size:20px;font-weight:700;color:#e94560;min-width:32px}
+.card-head .info{flex:1;min-width:0}
+.card-head .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-head .badges{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px}
+.card-head .meta{text-align:right;min-width:55px}
 .card-head .time{font-size:16px;font-weight:700}
-.card-head .price{color:#2ecc71;font-size:13px}
-.badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;margin-left:4px}
+.card-head .price{color:#2ecc71;font-size:12px}
+
+.badge{display:inline-block;padding:2px 5px;border-radius:3px;font-size:9px;font-weight:700}
 .badge.low-risk{background:#27ae60}.badge.med-risk{background:#f39c12;color:#000}.badge.high-risk{background:#c0392b}
-.badge.changed-badge{background:#e94560;animation:pulse .5s 3}
+.badge.changed-badge{background:#e94560}.badge.seats-ok{background:#27ae60}.badge.seats-no{background:#c0392b}
+.badge.over-budget{background:#c0392b}.badge.visa-free{background:#27ae60}.badge.visa-req{background:#c0392b}
+
 .card-body{padding:0 12px 12px;display:none;font-size:13px;line-height:1.6}
 .card-body.open{display:block}
 .card-body .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1a2e}
-.card-body .label{color:#888}
+.card-body .label{color:#888;font-size:12px}
 .leg{background:#0f3460;padding:8px;border-radius:6px;margin:6px 0}
-.leg .fn{font-weight:700;font-size:14px}
-.status{display:inline-block;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600}
+.leg .fn{font-weight:700;font-size:13px}
+.leg .leg-badges{margin-top:4px}
+.status{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600}
 .status.operating{background:#27ae60}.status.scheduled{background:#2980b9}.status.cancelled{background:#c0392b}
 .status.unknown{background:#7f8c8d}.status.delayed{background:#f39c12;color:#000}
 .actions{display:flex;gap:8px;margin-top:10px}
-.actions a{flex:1;text-align:center;padding:14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;min-height:48px;display:flex;align-items:center;justify-content:center}
+.actions a{flex:1;text-align:center;padding:14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center}
 .actions .book{background:#2ecc71;color:#000}
 .actions .call{background:#3498db;color:#fff}
 .ground{background:#0f3460;padding:8px;border-radius:6px;margin:6px 0;font-size:12px;color:#aaa}
-.refresh-bar{position:fixed;bottom:0;left:0;right:0;background:#16213e;border-top:1px solid #333;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:20}
-.refresh-bar .timer{font-size:12px;color:#888}
-.refresh-bar button{background:#e94560;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:700;font-size:13px}
+
+/* News section */
+.news-item{background:#16213e;border-radius:6px;padding:10px 12px;margin-bottom:6px}
+.news-item .headline{font-size:13px;font-weight:600}
+.news-item .meta{font-size:11px;color:#888;margin-top:3px}
+.news-item .meta a{color:#3498db;text-decoration:none}
+.news-item.high{border-left:3px solid #e94560}.news-item.medium{border-left:3px solid #f39c12}
+.airspace-alert{background:#c0392b;border-radius:6px;padding:10px 12px;margin-bottom:6px;font-size:13px;font-weight:600}
+.airspace-alert.reopen{background:#27ae60}
+
+/* Community */
+.report{background:#16213e;border-radius:6px;padding:10px 12px;margin-bottom:6px;font-size:13px}
+.report .vote{background:#0f3460;border:none;color:#2ecc71;padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;float:right}
+.ride{background:#16213e;border-radius:6px;padding:10px 12px;margin-bottom:6px}
+.ride .route{font-weight:700;font-size:14px}.ride .detail{font-size:12px;color:#888;margin-top:2px}
+.ride a{color:#3498db;text-decoration:none}
+
+/* Tabs for bottom sections */
+.tabs{display:flex;padding:0 12px;gap:0;margin-top:8px}
+.tab{flex:1;text-align:center;padding:8px;font-size:12px;font-weight:600;color:#888;border-bottom:2px solid transparent;cursor:pointer}
+.tab.active{color:#e94560;border-color:#e94560}
+.tab-content{display:none}.tab-content.active{display:block}
+
+.steps{padding:12px}.steps li{margin-bottom:6px;padding-left:4px;font-size:13px}
+.warn{background:#f39c12;color:#000;padding:8px 12px;font-size:11px;text-align:center;font-weight:600}
+.refresh-bar{position:fixed;bottom:0;left:0;right:0;background:#16213e;border-top:1px solid #333;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;z-index:20}
+.refresh-bar .timer{font-size:12px;color:#888}.refresh-bar button{background:#e94560;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:700;font-size:13px}
 .loading{text-align:center;padding:40px;color:#888}
-.steps{padding:12px}
-.steps li{margin-bottom:6px;padding-left:4px}
-.warn{background:#f39c12;color:#000;padding:10px 12px;font-size:12px;text-align:center;font-weight:600}
+.empty{text-align:center;padding:20px;color:#555;font-size:13px}
+
+/* Pattern insights */
+.insight{background:#16213e;border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:12px;border-left:3px solid #3498db}
+.insight.trend_up{border-color:#27ae60}.insight.trend_down{border-color:#c0392b}.insight.stable{border-color:#2ecc71}
 </style>
 </head>
 <body>
 
 <div class="top">
-  <h1>EMERGENCY FLIGHT FINDER</h1>
-  <div class="sub" id="updated">Loading...</div>
+  <h1 id="titleText">EMERGENCY FLIGHT FINDER</h1>
+  <select class="lang" id="langSelect" onchange="switchLang(this.value)">
+    <option value="en">EN</option>
+    <option value="zh">中文</option>
+    <option value="ar">عربي</option>
+  </select>
 </div>
+<div class="sub-bar" id="updated">Loading...</div>
+
+<div id="recoSection"></div>
 
 <div class="bar">
   <select id="speed" title="Speed priority">
@@ -81,20 +138,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
     <option value="1">1 stop</option>
     <option value="0">Direct</option>
   </select>
-  <button id="refreshBtn" onclick="loadData(true)">Refresh</button>
+  <button onclick="loadData(true)">Live</button>
   <button id="autoBtn" onclick="toggleAuto()">Auto: OFF</button>
 </div>
 
 <div id="airspaceSection" class="section"></div>
+<div id="visaSection" class="section" style="display:none"></div>
 <div id="escapeSection" class="section" style="display:none"></div>
 <div id="routesContainer"><div class="loading">Loading routes...</div></div>
 
-<div class="steps section" id="stepsSection" style="display:none">
-  <h2>Action Plan</h2>
-  <ol id="stepsList"></ol>
+<!-- Tabbed sections: News / Community / Intel -->
+<div class="tabs">
+  <div class="tab active" onclick="showTab('plan')">Action Plan</div>
+  <div class="tab" onclick="showTab('news')">News</div>
+  <div class="tab" onclick="showTab('community')">Community</div>
+  <div class="tab" onclick="showTab('intel')">Intel</div>
 </div>
 
-<div class="warn">Flight data changes rapidly during conflict. Always confirm with the airline before traveling.</div>
+<div id="tab-plan" class="tab-content active">
+  <div class="steps section">
+    <ol id="stepsList"></ol>
+  </div>
+</div>
+
+<div id="tab-news" class="tab-content">
+  <div class="section" id="newsSection"><div class="empty">Loading news...</div></div>
+</div>
+
+<div id="tab-community" class="tab-content">
+  <div class="section" id="reportsSection"><div class="empty">No reports yet</div></div>
+  <div class="section" id="ridesSection"><div class="empty">No ride shares yet</div></div>
+</div>
+
+<div id="tab-intel" class="tab-content">
+  <div class="section" id="patternsSection"><div class="empty">Collecting data...</div></div>
+  <div class="section" id="historySection"></div>
+</div>
+
+<div class="warn">Flight data changes rapidly during conflict. Always confirm with the airline.</div>
 
 <div class="refresh-bar">
   <span class="timer" id="timer">—</span>
@@ -102,25 +183,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
 </div>
 
 <script>
-const API = '/api/routes';
-let autoRefresh = false;
-let autoInterval = null;
-let countdown = 0;
-let countdownTimer = null;
+const API = '/api';
+let autoRefresh = false, countdown = 0, countdownTimer = null, currentLang = 'en', T = {};
 
 function qs(id) { return document.getElementById(id); }
 
 async function loadData(live) {
-  const speed = qs('speed').value;
-  const sort = qs('sortBy').value;
-  const stops = qs('maxStops').value;
-  const url = `${API}?speed=${speed}&sort_by=${sort}&max_stops=${stops}&live=${!!live}`;
-
+  const speed = qs('speed').value, sort = qs('sortBy').value, stops = qs('maxStops').value;
+  const url = `${API}/routes?speed=${speed}&sort_by=${sort}&max_stops=${stops}&live=${!!live}`;
   qs('timer').textContent = 'Loading...';
   try {
-    const res = await fetch(url);
-    const data = await res.json();
+    const [routeRes, newsRes, reportsRes, ridesRes] = await Promise.all([
+      fetch(url),
+      fetch(`${API}/news`).catch(() => null),
+      fetch(`${API}/reports`).catch(() => null),
+      fetch(`${API}/rideshares`).catch(() => null),
+    ]);
+    const data = await routeRes.json();
     render(data);
+    if (newsRes && newsRes.ok) renderNews(await newsRes.json());
+    if (reportsRes && reportsRes.ok) renderReports(await reportsRes.json());
+    if (ridesRes && ridesRes.ok) renderRides(await ridesRes.json());
+    qs('timer').textContent = live ? 'Live data loaded' : 'Cached data';
     if (autoRefresh) startCountdown(120);
   } catch (e) {
     qs('timer').textContent = 'OFFLINE — using cached data';
@@ -130,22 +214,46 @@ async function loadData(live) {
 function render(data) {
   qs('updated').textContent = data.updated_ast + '  |  ' + data.scenario;
 
+  // Recommendation
+  const rec = data.recommendation;
+  if (rec) {
+    const cls = rec.action === 'go_now' ? 'go' : rec.action === 'wait' ? 'wait' : 'wait_short';
+    const icon = rec.action === 'go_now' ? '>>>' : '...';
+    qs('recoSection').innerHTML = `<div class="reco ${cls}">
+      <span class="icon">${icon}</span>
+      <div class="text">${rec.action === 'go_now' ? (T.go_now||'GO NOW') : (T.wait||'WAIT')}
+        — ${rec.confidence} confidence<div class="reason">${rec.reason}</div></div></div>`;
+  }
+
   // Airspace
-  let airHtml = '<div class="section"><h2>Airspace</h2><div class="airspace">';
-  data.airspace.closed.forEach(c => airHtml += `<span class="tag closed">${c}</span>`);
-  data.airspace.restricted.forEach(c => airHtml += `<span class="tag restricted">${c}</span>`);
-  data.airspace.open.forEach(c => airHtml += `<span class="tag open">${c}</span>`);
-  airHtml += '</div></div>';
-  qs('airspaceSection').innerHTML = airHtml;
+  let air = '<h2>' + (T.airspace||'Airspace') + '</h2><div class="airspace">';
+  data.airspace.closed.forEach(c => air += `<span class="tag closed">${c}</span>`);
+  data.airspace.restricted.forEach(c => air += `<span class="tag restricted">${c}</span>`);
+  data.airspace.open.forEach(c => air += `<span class="tag open">${c}</span>`);
+  air += '</div>';
+  qs('airspaceSection').innerHTML = air;
+
+  // Visa checks
+  if (data.visa_checks && data.visa_checks.length) {
+    let vHtml = '<h2>Transit Visa</h2>';
+    data.visa_checks.forEach(v => {
+      const cls = v.visa_required === false ? 'ok' : v.visa_required === true ? 'warn' : '';
+      const icon = v.visa_required === false ? 'NO VISA NEEDED' : v.visa_required === true ? 'VISA REQUIRED' : 'CHECK MANUALLY';
+      vHtml += `<div class="visa-alert ${cls}"><strong>${v.hub}</strong>: ${icon} — ${v.notes}</div>`;
+    });
+    qs('visaSection').innerHTML = vHtml;
+    qs('visaSection').style.display = 'block';
+  }
 
   // Escape routes
   if (data.escape_routes && data.escape_routes.length) {
-    let escHtml = '<h2>Ground Escape</h2>';
+    let esc = '<h2>Ground Escape</h2><div class="airspace">';
     data.escape_routes.forEach(e => {
       const st = e.status === 'likely_open' ? 'open' : e.status === 'closed' ? 'closed' : 'restricted';
-      escHtml += `<span class="tag ${st}" style="margin:2px">${e.from} → ${e.to} (${e.hours}h) ${e.via}</span> `;
+      esc += `<span class="tag ${st}" style="margin:2px">${e.from} → ${e.to} (${e.hours}h)</span>`;
     });
-    qs('escapeSection').innerHTML = escHtml;
+    esc += '</div>';
+    qs('escapeSection').innerHTML = esc;
     qs('escapeSection').style.display = 'block';
   }
 
@@ -155,41 +263,53 @@ function render(data) {
     const rank = i + 1;
     const rel = r.reliability === 'high' ? 'high' : r.reliability === 'low' ? 'low' : '';
     const changed = r.changed ? 'changed' : '';
-    const riskBadge = r.risk === 'low' ? '<span class="badge low-risk">LOW</span>'
-      : r.risk === 'high' ? '<span class="badge high-risk">HIGH</span>'
-      : '<span class="badge med-risk">MED</span>';
-    const changedBadge = r.changed ? '<span class="badge changed-badge">CHANGED</span>' : '';
     const price = r.price_economy ? `$${r.price_economy.toLocaleString()}` : '—';
-    const totalH = Math.round(r.total_hours);
+
+    let badges = '';
+    badges += r.risk === 'low' ? '<span class="badge low-risk">LOW RISK</span>'
+      : r.risk === 'high' ? '<span class="badge high-risk">HIGH RISK</span>'
+      : '<span class="badge med-risk">MED RISK</span>';
+    if (r.changed) badges += '<span class="badge changed-badge">CHANGED</span>';
 
     html += `<div class="card ${rel} ${changed}" onclick="toggle(this)">
       <div class="card-head">
         <span class="rank">#${rank}</span>
-        <div class="name">${r.name} ${riskBadge} ${changedBadge}</div>
+        <div class="info">
+          <div class="name">${r.name}</div>
+          <div class="badges">${badges}</div>
+        </div>
         <div class="meta">
-          <div class="time">${totalH}h</div>
+          <div class="time">${Math.round(r.total_hours)}h</div>
           <div class="price">${price}</div>
         </div>
       </div>
       <div class="card-body">
-        <div class="row"><span class="label">Departs</span><span>${r.depart_ast || '—'}</span></div>
-        <div class="row"><span class="label">Arrives</span><span>${r.arrive_cst || '—'}</span></div>
+        <div class="row"><span class="label">${T.departs||'Departs'}</span><span>${r.depart_ast || '—'}</span></div>
+        <div class="row"><span class="label">${T.arrives||'Arrives'}</span><span>${r.arrive_cst || '—'}</span></div>
         <div class="row"><span class="label">Wait</span><span>${r.wait_hours}h</span></div>
         <div class="row"><span class="label">Ground</span><span>${r.ground_hours}h</span></div>
         <div class="row"><span class="label">Flight</span><span>${r.flight_hours}h</span></div>
         <div class="row"><span class="label">Stops</span><span>${r.num_stops}</span></div>
         <div class="row"><span class="label">Economy</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
         <div class="row"><span class="label">Business</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
-        ${r.ground.map(g => `<div class="ground">${g.from} → ${g.to} via ${g.via} (~${g.hours}h)</div>`).join('')}
-        ${r.legs.map(l => `<div class="leg">
-          <span class="fn">${l.flight}</span> ${l.airline}
-          <span class="status ${l.status}">${l.status.toUpperCase()}</span><br>
-          ${l.from} → ${l.to} &nbsp; ${l.duration}h &nbsp; ${l.aircraft}
-        </div>`).join('')}
         <div class="row"><span class="label">Score</span><span>${r.score} (lower = better)</span></div>
+        ${r.ground.map(g => `<div class="ground">${g.from} → ${g.to} via ${g.via} (~${g.hours}h)</div>`).join('')}
+        ${r.legs.map(l => {
+          let lb = '';
+          if (l.seats_available === true) lb += '<span class="badge seats-ok">SEATS OK</span>';
+          if (l.seats_available === false) lb += '<span class="badge seats-no">SOLD OUT</span>';
+          if (l.over_budget) lb += '<span class="badge over-budget">OVER BUDGET</span>';
+          if (l.price_source) lb += `<span class="badge" style="background:#555">via ${l.price_source}</span>`;
+          return `<div class="leg">
+            <span class="fn">${l.flight}</span> ${l.airline}
+            <span class="status ${l.status}">${l.status.toUpperCase()}</span><br>
+            ${l.from} → ${l.to} &nbsp; ${l.duration}h &nbsp; ${l.aircraft}
+            ${lb ? '<div class="leg-badges">'+lb+'</div>' : ''}
+          </div>`;
+        }).join('')}
         <div class="actions">
-          ${r.booking_urls.map(u => `<a class="book" href="${u}" target="_blank" rel="noopener">BOOK NOW</a>`).join('')}
-          ${r.contacts.map(c => `<a class="call" href="tel:${c.replace(/[^+0-9]/g,'')}">CALL ${c}</a>`).join('')}
+          ${r.booking_urls.map(u => `<a class="book" href="${u}" target="_blank" rel="noopener">${T.book_now||'BOOK NOW'}</a>`).join('')}
+          ${r.contacts.map(c => `<a class="call" href="tel:${c.replace(/[^+0-9]/g,'')}">${T.call||'CALL'} ${c}</a>`).join('')}
         </div>
         ${r.notes ? `<div style="color:#888;margin-top:8px;font-size:12px">${r.notes}</div>` : ''}
       </div>
@@ -197,8 +317,16 @@ function render(data) {
   });
   qs('routesContainer').innerHTML = html;
 
+  // Patterns
+  if (data.patterns && data.patterns.length) {
+    let pHtml = '<h2>Trend Analysis</h2>';
+    data.patterns.forEach(p => {
+      pHtml += `<div class="insight ${p.type||''}">${p.message}${p.confidence ? ' <span style="opacity:.6">('+p.confidence+')</span>' : ''}</div>`;
+    });
+    qs('patternsSection').innerHTML = pHtml;
+  }
+
   // Steps
-  qs('stepsSection').style.display = 'block';
   qs('stepsList').innerHTML = `
     <li>Cross to Saudi via King Fahd Causeway</li>
     <li>Fly Dammam → Riyadh (~1h15m) or drive (~4h)</li>
@@ -207,26 +335,103 @@ function render(data) {
     <li>Backup: Turkish Airlines via Istanbul (daily)</li>
     <li>Passport + cash (SAR & USD) + phone charger</li>`;
 
-  if (data.routes.some(r => r.changed)) {
-    try { navigator.vibrate?.(200); } catch(e) {}
-  }
+  if (data.routes.some(r => r.changed)) { try { navigator.vibrate?.(200); } catch(e) {} }
 }
 
-function toggle(card) {
-  const body = card.querySelector('.card-body');
-  body.classList.toggle('open');
+function renderNews(data) {
+  let html = '<h2>Conflict News</h2>';
+  if (data.airspace_alerts && data.airspace_alerts.length) {
+    data.airspace_alerts.forEach(a => {
+      const cls = a.type === 'potential_reopening' ? 'reopen' : '';
+      html += `<div class="airspace-alert ${cls}">${a.type === 'potential_reopening' ? 'POSSIBLE REOPENING' : 'POSSIBLE CLOSURE'}: ${a.country} — ${a.headline} <span style="opacity:.7">(${a.source})</span></div>`;
+    });
+  }
+  if (data.news && data.news.length) {
+    data.news.forEach(n => {
+      html += `<div class="news-item ${n.relevance}">
+        <div class="headline">${n.title}</div>
+        <div class="meta">${n.source} ${n.published ? '· '+n.published : ''} ${n.link ? '· <a href="'+n.link+'" target="_blank">Read</a>' : ''}</div>
+      </div>`;
+    });
+  } else {
+    html += '<div class="empty">No relevant conflict news found</div>';
+  }
+  qs('newsSection').innerHTML = html;
+}
+
+function renderReports(data) {
+  let html = '<h2>Community Reports</h2>';
+  if (data.reports && data.reports.length) {
+    data.reports.forEach(r => {
+      html += `<div class="report">
+        <button class="vote" onclick="event.stopPropagation();upvote('${r.id}')">+${r.upvotes}</button>
+        <strong>${r.flight||r.airport}</strong> ${r.status ? '<span class="status '+r.status+'">'+r.status.toUpperCase()+'</span>' : ''}
+        <div style="margin-top:4px">${r.message}</div>
+        <div style="font-size:11px;color:#666;margin-top:2px">${r.reporter} · ${new Date(r.timestamp).toLocaleString()}</div>
+      </div>`;
+    });
+  } else {
+    html += '<div class="empty">No community reports yet. Be the first to report!</div>';
+  }
+  qs('reportsSection').innerHTML = html;
+}
+
+function renderRides(data) {
+  let html = '<h2>Ride Sharing</h2>';
+  if (data.rides && data.rides.length) {
+    data.rides.forEach(r => {
+      html += `<div class="ride">
+        <div class="route">${r.origin} → ${r.destination}</div>
+        <div class="detail">${r.departure_time} · ${r.seats} seat(s) · <a href="tel:${r.contact}">${r.contact}</a></div>
+        ${r.notes ? '<div class="detail">'+r.notes+'</div>' : ''}
+      </div>`;
+    });
+  } else {
+    html += '<div class="empty">No rides posted yet</div>';
+  }
+  qs('ridesSection').innerHTML = html;
+}
+
+async function upvote(id) {
+  await fetch(`${API}/reports/${id}/upvote`, {method:'POST'}).catch(()=>{});
+  loadData(false);
+}
+
+function toggle(card) { card.querySelector('.card-body').classList.toggle('open'); }
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['plan','news','community','intel'];
+    t.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  const el = qs('tab-'+name);
+  if (el) el.classList.add('active');
+  if (name === 'intel') loadHistory();
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch(`${API}/history`);
+    const data = await res.json();
+    if (data.conflicts) {
+      let html = '<h2>Historical Conflict Patterns</h2>';
+      data.conflicts.forEach(c => {
+        html += `<div class="insight"><strong>${c.conflict}</strong>: ${c.notes}
+          ${c.airspace_recovery_days != null ? ' · Airspace recovered in '+c.airspace_recovery_days+'d' : ' · Airspace did not recover'}
+        </div>`;
+      });
+      qs('historySection').innerHTML = html;
+    }
+  } catch(e) {}
 }
 
 function toggleAuto() {
   autoRefresh = !autoRefresh;
   qs('autoBtn').textContent = autoRefresh ? 'Auto: ON' : 'Auto: OFF';
   qs('autoBtn').classList.toggle('on', autoRefresh);
-  if (autoRefresh) {
-    loadData(false);
-  } else {
-    clearInterval(countdownTimer);
-    qs('timer').textContent = 'Auto-refresh off';
-  }
+  if (autoRefresh) loadData(false);
+  else { clearInterval(countdownTimer); qs('timer').textContent = 'Auto-refresh off'; }
 }
 
 function startCountdown(seconds) {
@@ -234,28 +439,25 @@ function startCountdown(seconds) {
   countdown = seconds;
   countdownTimer = setInterval(() => {
     countdown--;
-    const m = Math.floor(countdown / 60);
-    const s = countdown % 60;
+    const m = Math.floor(countdown/60), s = countdown%60;
     qs('timer').textContent = `Next refresh: ${m}m ${s.toString().padStart(2,'0')}s`;
-    if (countdown <= 0) {
-      clearInterval(countdownTimer);
-      loadData(false);
-    }
+    if (countdown <= 0) { clearInterval(countdownTimer); loadData(false); }
   }, 1000);
 }
 
-// Change selects trigger reload
-['speed','sortBy','maxStops'].forEach(id => {
-  qs(id).addEventListener('change', () => loadData(false));
-});
-
-// Initial load
-loadData(false);
-
-// Register service worker for offline
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+async function switchLang(lang) {
+  currentLang = lang;
+  try {
+    const res = await fetch(`${API}/translations?lang=${lang}`);
+    T = await res.json();
+    qs('titleText').textContent = T.title || 'EMERGENCY FLIGHT FINDER';
+    loadData(false);
+  } catch(e) {}
 }
+
+['speed','sortBy','maxStops'].forEach(id => qs(id).addEventListener('change', () => loadData(false)));
+loadData(false);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>
 </body>
 </html>
