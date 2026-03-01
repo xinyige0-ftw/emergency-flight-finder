@@ -126,3 +126,15 @@ CLI tool with route scoring, live status checks, watch mode, all criteria as fla
 | `/api/reports/{id}/upvote` | POST | Upvote a report |
 | `/api/rideshares` | GET/POST | Ride-sharing board |
 | `/api/translations` | GET | UI translations (en/zh/ar) |
+
+---
+
+## Remaining Tasks (not P0)
+
+| Priority | Task | Notes |
+|----------|------|-------|
+| **P1** | External crowdsource data | Integrate X/Twitter search, Telegram evacuation groups, FR24 community, embassy feeds. Not P0. |
+| **P1** | Persist community data | Replace file-based storage with DB (Supabase/Firebase) so reports & rides persist on Vercel. |
+| **P2** | Real price scraping | Airlines block scrapers; need headless browser or booking API partners for live prices. |
+| **P2** | Service worker | Cache new API endpoints (news, reports, rides) for offline. |
+| **P2** | Hardening | Rate limits, input validation on POST /api/reports and /api/rideshares. |
