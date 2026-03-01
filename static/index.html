@@ -167,6 +167,17 @@ let autoRefresh = false, countdown = 0, countdownTimer = null, currentLang = 'en
 function qs(id) { return document.getElementById(id); }
 function t(key, fallback) { return T[key] || fallback || key; }
 
+function translateConfidence(c) {
+  if (!c) return '';
+  const key = c + '_confidence';
+  return t(key, c + ' ' + t('confidence', 'confidence'));
+}
+
+function translateVisaNotes(hub, originalNotes) {
+  if (T.visa_notes && T.visa_notes[hub]) return T.visa_notes[hub];
+  return originalNotes;
+}
+
 async function loadData(live) {
   const speed = qs('speed').value, sort = qs('sortBy').value, stops = qs('maxStops').value;
   const pax = qs('passengers').value || 1, budg = qs('budget').value || 10000;
@@ -200,10 +211,11 @@ function render(data) {
   if (rec) {
     const cls = rec.action === 'go_now' ? 'go' : rec.action === 'wait' ? 'wait' : 'wait_short';
     const icon = rec.action === 'go_now' ? '>>>' : '...';
+    const actionLabel = rec.action === 'go_now' ? t('go_now','GO NOW') : t('wait','WAIT');
+    const confLabel = translateConfidence(rec.confidence);
     qs('recoSection').innerHTML = `<div class="reco ${cls}">
       <span class="icon">${icon}</span>
-      <div class="text">${rec.action === 'go_now' ? t('go_now','GO NOW') : t('wait','WAIT')}
-        — ${rec.confidence} confidence<div class="reason">${rec.reason}</div></div></div>`;
+      <div class="text">${actionLabel} — ${confLabel}<div class="reason">${rec.reason}</div></div></div>`;
   }
 
   let air = '<h2>' + t('airspace','Airspace') + '</h2><div class="airspace">';
@@ -217,10 +229,11 @@ function render(data) {
     let vHtml = '<h2>' + t('transit_visa','Transit Visa') + '</h2>';
     data.visa_checks.forEach(v => {
       const cls = v.visa_required === false ? 'ok' : v.visa_required === true ? 'warn' : '';
-      const icon = v.visa_required === false ? t('no_visa','NO VISA NEEDED')
+      const label = v.visa_required === false ? t('no_visa','NO VISA NEEDED')
         : v.visa_required === true ? t('visa_required','VISA REQUIRED')
         : t('check_manually','CHECK MANUALLY');
-      vHtml += `<div class="visa-alert ${cls}"><strong>${v.hub}</strong>: ${icon} — ${v.notes}</div>`;
+      const notes = translateVisaNotes(v.hub, v.notes);
+      vHtml += `<div class="visa-alert ${cls}"><strong>${v.hub}</strong>: ${label} — ${notes}</div>`;
     });
     qs('visaSection').innerHTML = vHtml;
     qs('visaSection').style.display = 'block';
@@ -245,9 +258,13 @@ function render(data) {
     const price = r.price_economy ? `$${r.price_economy.toLocaleString()}` : '—';
 
     let badges = '';
-    badges += r.risk === 'low' ? `<span class="badge low-risk">${t('low_risk','LOW RISK')}</span>`
-      : r.risk === 'high' ? `<span class="badge high-risk">${t('high_risk','HIGH RISK')}</span>`
-      : `<span class="badge med-risk">${t('med_risk','MED RISK')}</span>`;
+    if (r.risk === 'low') {
+      badges += `<span class="badge low-risk" title="${t('low_risk_tip','Route avoids conflict zones')}">${t('low_risk','SAFE ROUTE')}</span>`;
+    } else if (r.risk === 'high') {
+      badges += `<span class="badge high-risk" title="${t('high_risk_tip','Route crosses active conflict airspace')}">${t('high_risk','CONFLICT ZONE')}</span>`;
+    } else {
+      badges += `<span class="badge med-risk" title="${t('med_risk_tip','Route passes near active conflict area')}">${t('med_risk','NEAR CONFLICT')}</span>`;
+    }
 
     if (r.seats_status === 'ok') badges += `<span class="badge seats-ok">${t('seats_ok','SEATS OK')}</span>`;
     else if (r.seats_status === 'sold_out') badges += `<span class="badge seats-no">${t('sold_out','SOLD OUT')}</span>`;
@@ -307,7 +324,7 @@ function render(data) {
   if (data.patterns && data.patterns.length) {
     let pHtml = '<h2>' + t('trend_analysis','Trend Analysis') + '</h2>';
     data.patterns.forEach(p => {
-      pHtml += `<div class="insight ${p.type||''}">${p.message}${p.confidence ? ' <span style="opacity:.6">('+p.confidence+')</span>' : ''}</div>`;
+      pHtml += `<div class="insight ${p.type||''}">${p.message}${p.confidence ? ' <span style="opacity:.6">('+translateConfidence(p.confidence)+')</span>' : ''}</div>`;
     });
     qs('patternsSection').innerHTML = pHtml;
   }
@@ -330,14 +347,15 @@ function renderNews(data) {
   if (data.airspace_alerts && data.airspace_alerts.length) {
     data.airspace_alerts.forEach(a => {
       const cls = a.type === 'potential_reopening' ? 'reopen' : '';
-      html += `<div class="airspace-alert ${cls}">${a.type === 'potential_reopening' ? 'POSSIBLE REOPENING' : 'POSSIBLE CLOSURE'}: ${a.country} — ${a.headline} <span style="opacity:.7">(${a.source})</span></div>`;
+      const label = a.type === 'potential_reopening' ? t('possible_reopening','POSSIBLE REOPENING') : t('possible_closure','POSSIBLE CLOSURE');
+      html += `<div class="airspace-alert ${cls}">${label}: ${a.country} — ${a.headline} <span style="opacity:.7">(${a.source})</span></div>`;
     });
   }
   if (data.news && data.news.length) {
     data.news.forEach(n => {
       html += `<div class="news-item ${n.relevance}">
         <div class="headline">${n.title}</div>
-        <div class="meta">${n.source} ${n.published ? '· '+n.published : ''} ${n.link ? '· <a href="'+n.link+'" target="_blank">Read</a>' : ''}</div>
+        <div class="meta">${n.source} ${n.published ? '· '+n.published : ''} ${n.link ? '· <a href="'+n.link+'" target="_blank">'+t('read_more','Read')+'</a>' : ''}</div>
       </div>`;
     });
   } else {
@@ -369,7 +387,7 @@ function renderRides(data) {
     data.rides.forEach(r => {
       html += `<div class="ride">
         <div class="route">${r.origin} → ${r.destination}</div>
-        <div class="detail">${r.departure_time} · ${r.seats} seat(s) · <a href="tel:${r.contact}">${r.contact}</a></div>
+        <div class="detail">${r.departure_time} · ${r.seats} ${t('seat_unit','seat(s)')} · <a href="tel:${r.contact}">${r.contact}</a></div>
         ${r.notes ? '<div class="detail">'+r.notes+'</div>' : ''}
       </div>`;
     });
@@ -409,9 +427,9 @@ async function upvote(id) {
 function toggle(card) { card.querySelector('.card-body').classList.toggle('open'); }
 
 function showTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i) => {
+  document.querySelectorAll('.tab').forEach((el,i) => {
     const tabs = ['plan','news','community','intel'];
-    t.classList.toggle('active', tabs[i] === name);
+    el.classList.toggle('active', tabs[i] === name);
   });
   document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
   const el = qs('tab-'+name);
@@ -472,6 +490,7 @@ function applyTranslationsToUI() {
   qs('opt_price').textContent = t('price', 'Price');
   qs('opt_dur').textContent = t('duration', 'Duration');
   qs('opt_direct').textContent = t('direct', 'Direct');
+  qs('warnText').textContent = t('confirm_airline', 'Flight data changes rapidly during conflict. Always confirm with the airline.');
 }
 
 async function switchLang(lang) {
