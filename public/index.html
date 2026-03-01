@@ -109,10 +109,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
     <option value="price" id="opt_price">Price</option>
     <option value="duration" id="opt_dur">Duration</option>
   </select>
-  <select id="maxStops" title="Max stops">
-    <option value="2">2 stops</option>
-    <option value="1">1 stop</option>
-    <option value="0" id="opt_direct">Direct</option>
+  <select id="maxStops" title="Flight connections">
+    <option value="3" id="opt_any">Any</option>
+    <option value="1" id="opt_1conn">1 connection max</option>
+    <option value="0" id="opt_nonstop">Nonstop flight</option>
   </select>
   <label><span id="lbl_pax">Pax</span><input id="passengers" type="number" min="1" max="9" value="1"></label>
   <label><span id="lbl_budget">Budget</span><input id="budget" type="number" min="500" max="50000" step="500" value="10000"></label>
@@ -291,7 +291,7 @@ function render(data) {
         <div class="row"><span class="label">${t('wait_label','Wait')}</span><span>${r.wait_hours}h</span></div>
         <div class="row"><span class="label">${t('ground','Ground')}</span><span>${r.ground_hours}h</span></div>
         <div class="row"><span class="label">${t('flight','Flight')}</span><span>${r.flight_hours}h</span></div>
-        <div class="row"><span class="label">${t('stops','Stops')}</span><span>${r.num_stops}</span></div>
+        <div class="row"><span class="label">${t('connections','Connections')}</span><span>${r.num_stops === 0 ? t('nonstop_flight','Nonstop') : r.num_stops}</span></div>
         <div class="row"><span class="label">${t('economy','Economy')}</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
         <div class="row"><span class="label">${t('business','Business')}</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
         <div class="row" title="${t('score_tip','Score = wait×1.5 + ground + flight + layover×0.8 + conflict penalty. Lower = faster escape.')}"><span class="label">${t('score','Score')}</span><span>${r.score} (${t('lower_better','lower = faster escape')})</span></div>
@@ -490,7 +490,9 @@ function applyTranslationsToUI() {
   qs('opt_depart').textContent = t('departure', 'Departure');
   qs('opt_price').textContent = t('price', 'Price');
   qs('opt_dur').textContent = t('duration', 'Duration');
-  qs('opt_direct').textContent = t('direct', 'Direct');
+  qs('opt_any').textContent = t('any_connections', 'Any');
+  qs('opt_1conn').textContent = t('one_connection', '1 connection max');
+  qs('opt_nonstop').textContent = t('nonstop_flight', 'Nonstop flight');
   qs('warnText').textContent = t('confirm_airline', 'Flight data changes rapidly during conflict. Always confirm with the airline.');
 }
 
