@@ -83,6 +83,9 @@ class FlightLeg(BaseModel):
     conflict_proximity: ConflictProximity = ConflictProximity.MEDIUM
     status: FlightStatus = FlightStatus.UNKNOWN
     status_source: str = ""
+    price_source: str = ""
+    over_budget: bool = False
+    seats_sufficient: Optional[bool] = None
     last_checked: Optional[datetime] = None
 
 

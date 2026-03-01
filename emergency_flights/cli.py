@@ -21,7 +21,9 @@ from .display import (
     print_summary_table,
     print_watch_banner,
 )
+from .alerts import AlertConfig, detect_changes, send_alerts, print_alert_status
 from .models import Route, UserProfile
+from .pricing import check_prices_and_seats, filter_by_budget, check_multi_passenger_availability
 from .routes import build_routes
 from .searcher import check_all_flights
 
@@ -132,6 +134,17 @@ async def _run_finder(
 
     try:
         sc.known_flights = await check_all_flights(sc.known_flights, live=live)
+        sc.known_flights = await check_prices_and_seats(
+            sc.known_flights,
+            passengers=overrides.get("passengers", 1),
+            live=live,
+        )
+        sc.known_flights = filter_by_budget(
+            sc.known_flights, sc.user.budget_usd, sc.user.passengers,
+        )
+        sc.known_flights = check_multi_passenger_availability(
+            sc.known_flights, overrides.get("passengers", 1),
+        )
     except Exception as e:
         console.print(f"[bold red]Network error: {e}[/bold red]")
         print_offline_banner(now if not is_refresh else None)
@@ -177,6 +190,9 @@ async def _run_finder(
 async def _run_watch(path: Path, live: bool, interval_minutes: int, overrides: dict) -> None:
     cycle = 0
     previous_routes: list[Route] | None = None
+    alert_config = AlertConfig()
+
+    print_alert_status(alert_config)
 
     while True:
         cycle += 1
@@ -187,6 +203,14 @@ async def _run_watch(path: Path, live: bool, interval_minutes: int, overrides: d
             is_refresh=cycle > 1,
             overrides=overrides,
         )
+
+        if previous_routes and alert_config.is_configured:
+            changes = detect_changes(routes, previous_routes)
+            if changes:
+                sent = await send_alerts(changes, alert_config)
+                if sent:
+                    console.print(f"[green]Sent {sent} alert(s)[/green]")
+
         previous_routes = routes
         print_watch_banner(interval_minutes, cycle)
 

@@ -19,95 +19,110 @@ fly from Saudi airports (Dammam/Riyadh/Jeddah) to China.
 /Users/G/Documents/emergency-flight-finder/
 ├── pyproject.toml                  # Package config, `evac` CLI entry point
 ├── requirements.txt                # Python deps
-├── REQUIREMENTS.md                 # Full requirements spec + build phases
-├── BUILD_STATUS.md                 # This file
-├── README.md                       # User-facing docs
+├── Dockerfile                      # Cloud deployment
+├── render.yaml                     # Render.com deployment config
+├── vercel.json                     # Vercel deployment config
 ├── scenarios/
 │   └── bahrain_to_china.yaml       # Current scenario with all flight data
+├── static/
+│   ├── index.html                  # Mobile-first web UI
+│   └── sw.js                       # Service worker for offline PWA
+├── public/
+│   ├── index.html                  # Vercel static copy
+│   └── sw.js                       # Vercel static copy
+├── api/
+│   └── index.py                    # Vercel serverless entry point
 └── emergency_flights/
     ├── __init__.py
     ├── cli.py                      # Click CLI with all flag options
     ├── config.py                   # YAML scenario loader
-    ├── models.py                   # Pydantic models (Flight, Route, Scenario, etc.)
+    ├── models.py                   # Pydantic models
     ├── searcher.py                 # FR24 flight status checking
     ├── routes.py                   # Route planner + scoring engine
     ├── airspace.py                 # Airspace status module
-    └── display.py                  # Rich terminal output
+    ├── display.py                  # Rich terminal output
+    ├── web.py                      # FastAPI web server + all API endpoints
+    ├── pricing.py                  # Phase 2: Price & seat scraping
+    ├── alerts.py                   # Phase 3: Twilio SMS/WhatsApp alerts
+    ├── intel.py                    # Phase 5: News feeds, NOTAM parser
+    ├── predictions.py              # Phase 6: Historical patterns, visa checker
+    └── community.py                # Phase 7: Crowdsourced reports, ride-sharing
 ```
 
-## Phase 1 — v1.0: COMPLETE
-Everything works. Run: `evac find --offline` or `evac find` (live) or `evac find -w` (watch).
-All user criteria exposed as CLI flags (--speed, --budget, --risk, --sort, etc.).
+## Deployment
+- **Live URL:** https://emergency-flight-finder.vercel.app
+- **GitHub:** https://github.com/xinyige0-ftw/emergency-flight-finder
+- Auto-deploys on push to main
 
-## Phase 2 — v1.1: Price & Seat Availability — NOT STARTED
-- Scrape real prices from airline booking pages (Turkish, Saudia, Cathay, etc.)
-- Scrape Google Flights / Skyscanner as fallback
-- Detect seat availability (sold out / cabin class)
+## Phase 1 — v1.0: Core Evacuation Finder — COMPLETE
+CLI tool with route scoring, live status checks, watch mode, all criteria as flags.
+
+## Phase 2 — v1.1: Price & Seat Availability — COMPLETE
+- Airline-specific scrapers (Turkish, Saudia, Cathay, Air China, China Southern)
+- Google Flights fallback
+- Seat availability detection
 - Multi-passenger seat check
-- Budget filter (hide routes above cap)
+- Budget filter (tags over-budget flights)
 
-## Phase 3 — v1.2: Alerts & Notifications — NOT STARTED
-- SMS alerts via Twilio when route status changes
+## Phase 3 — v1.2: Alerts & Notifications — COMPLETE
+- Twilio SMS alerts on route status changes
 - WhatsApp as alternative channel
-- Alert triggers: cancelled→reinstated, airspace reopened, new flight added
-- Configurable preferences + cooldown to prevent spam
+- Change detection: status flips, price changes, new/removed routes
+- Cooldown to prevent spam (5 min per route)
+- Set env vars: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, EVAC_ALERT_PHONE, EVAC_ALERT_WHATSAPP
 
-## Phase 4 — v1.3: Web UI (Mobile-First) — NOT STARTED
-- Mobile-first web interface (critical for on-the-move use)
-- Same data as CLI, accessible from phone browser
-- One-tap call buttons + booking links
-- Auto-refresh with push notifications
-- Offline-capable PWA
-- Shareable URL for family/friends
+## Phase 4 — v1.3: Web UI (Mobile-First) — COMPLETE
+- Mobile-first dark theme with large tap targets
+- One-tap call/book buttons
+- Auto-refresh with countdown timer
+- PWA with service worker (offline capable)
+- Deployed to Vercel with permanent URL
+- Filter controls: speed priority, sort, max stops
 
-## Phase 5 — v1.4: Intelligence & Data Sources — NOT STARTED
-- Conflict news feed integration (Al Jazeera, Reuters, BBC RSS)
-- Auto-detect airspace closures from headlines (keyword NLP)
-- Embassy evacuation flight integration
-- NOTAM feed parser
-- Airport departure board scraper
+## Phase 5 — v1.4: Intelligence & Data Sources — COMPLETE
+- RSS news feed integration (Al Jazeera, Reuters, BBC, FlightGlobal)
+- Keyword NLP classification (region + airspace + conflict)
+- Auto-detect potential airspace reopenings/closures from headlines
+- NOTAM parser (FAA endpoint)
+- Airport departure board scraper (FR24)
+- API endpoints: /api/news, /api/notams
 
-## Phase 6 — v1.5: Smart Predictions — NOT STARTED
-- Historical pattern detection from past conflicts
-- Predict flight resumption timing
-- Predict airspace reopening
-- "Wait vs go now" recommendation
-- Transit visa checker per passport type
+## Phase 6 — v1.5: Smart Predictions — COMPLETE
+- Historical conflict pattern database (Gulf War, Iraq 2003, Yemen, Qatar blockade, Ukraine, Iran-Israel 2024)
+- Status snapshot recording for trend analysis
+- Pattern detection: trend_up, trend_down, stable
+- "Wait vs Go Now" recommendation engine
+- Transit visa checker per passport type (CN passport: Turkey, UK, Ethiopia, Qatar, UAE, etc.)
+- API endpoints: /api/history
 
-## Phase 7 — v2.0: Multi-Scenario & Community — NOT STARTED
-- Multiple concurrent scenarios
-- Crowdsourced flight status reports
-- Real-time evacuee chat
-- Ride-sharing integration for ground segments
-- Multi-language (Chinese, Arabic, English)
+## Phase 7 — v2.0: Multi-Scenario & Community — COMPLETE
+- Multiple scenario support (/api/scenarios)
+- Crowdsourced flight/airport status reports (/api/reports)
+- Report upvoting for community validation
+- Ride-sharing board for ground segments (/api/rideshares)
+- Multi-language support: English, Chinese (中文), Arabic (العربية)
+- Translation API: /api/translations?lang=zh
 
-## Key Design Decisions Made
-1. **Speed > Price**: Ranking prioritizes getting out fast, not saving money
+## Key Design Decisions
+1. **Speed > Price**: Ranking prioritizes getting out fast
 2. **Balanced scoring**: `score = (wait * 1.5) + ground + flight + (layover * 0.8) + conflict_penalty`
-3. **Three speed modes**: soonest (wait*3), balanced (wait*1.5), shortest_total (wait*1)
-4. **Ground transport**: Auto-picks fastest (fly DMM→RUH 1.25h vs drive 4h)
-5. **Conflict proximity**: Routes scored LOW/MED/HIGH risk based on airspace they traverse
-6. **Dual timezone**: Departure in AST (UTC+3), arrival in CST (UTC+8)
-7. **Watch mode**: Auto-refresh with [CHANGED] badges + terminal bell on status flips
-8. **All criteria are CLI flags**: Every preference can be overridden at runtime
-9. **Web UI later**: CLI is functional, web UI is Phase 4 (mobile-first PWA)
+3. **Ground transport**: Auto-picks fastest (fly DMM→RUH 1.25h vs drive 4h)
+4. **Dual timezone**: Departure in AST (UTC+3), arrival in CST (UTC+8)
+5. **All criteria are CLI flags**: Every preference can be overridden at runtime
+6. **Vercel deployment**: Serverless Python + static HTML, auto-deploys from GitHub
+7. **Offline-first**: Service worker caches pages + last API response
+8. **File-based state**: History, reports, rides stored in ~/.evac_* files (no DB needed)
 
-## Known Flights in Scenario
-Direct from Saudi to China:
-- CZ5008 China Southern RUH→SZX Tue/Thu/Sat
-- SV884 Saudia RUH→CAN Tue/Thu/Sat
-- CX644 Cathay Pacific RUH→HKG daily
-- CA790 Air China RUH→PEK Mon/Wed/Fri/Sun
-- SV882 Saudia JED→CAN Mon/Wed/Fri
-
-Via Istanbul (safest):
-- TK145 Turkish Airlines RUH→IST daily
-- TK88 Turkish Airlines IST→PEK daily
-- TK26 Turkish Airlines IST→PVG daily
-- TK72 Turkish Airlines IST→CAN daily
-
-## Live Status (from FlightRadar24, checked Feb 28 2026)
-- CX644 Feb 28: CANCELLED (was operating fine through Feb 27)
-- CZ5008 Feb 28: UNKNOWN (coin flip — call China Southern)
-- SV884: Likely operating but next departure is Tue Mar 3
-- TK145: Most likely operating (Turkish airspace unaffected)
+## API Endpoints
+| Endpoint | Method | Description |
+|---|---|---|
+| `/` | GET | Mobile web UI |
+| `/api/routes` | GET | Route data with scores, prices, recommendations |
+| `/api/news` | GET | Conflict news feed with airspace alerts |
+| `/api/notams` | GET | Airport NOTAMs |
+| `/api/history` | GET | Historical conflict patterns |
+| `/api/scenarios` | GET | List available scenarios |
+| `/api/reports` | GET/POST | Crowdsourced flight reports |
+| `/api/reports/{id}/upvote` | POST | Upvote a report |
+| `/api/rideshares` | GET/POST | Ride-sharing board |
+| `/api/translations` | GET | UI translations (en/zh/ar) |
