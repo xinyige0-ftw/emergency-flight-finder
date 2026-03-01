@@ -266,8 +266,11 @@ function render(data) {
       badges += `<span class="badge med-risk" title="${t('med_risk_tip','Route passes near active conflict area')}">${t('med_risk','NEAR CONFLICT')}</span>`;
     }
 
-    if (r.seats_status === 'ok') badges += `<span class="badge seats-ok">${t('seats_ok','SEATS OK')}</span>`;
-    else if (r.seats_status === 'sold_out') badges += `<span class="badge seats-no">${t('sold_out','SOLD OUT')}</span>`;
+    const legSeats = (r.legs || []).map(l => l.seats_available);
+    const allOk = legSeats.length > 0 && legSeats.every(s => s === true);
+    const anySold = legSeats.some(s => s === false);
+    if (allOk) badges += `<span class="badge seats-ok">${t('seats_ok','SEATS OK')}</span>`;
+    else if (anySold) badges += `<span class="badge seats-no">${t('sold_out','SOLD OUT')}</span>`;
     else badges += `<span class="badge seats-unknown">${t('seats_unknown','SEATS ?')}</span>`;
 
     if (r.over_budget) badges += `<span class="badge over-budget">${t('over_budget','OVER BUDGET')}</span>`;
