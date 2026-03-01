@@ -144,9 +144,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
 </div>
 
 <div id="tab-community" class="tab-content">
-  <div class="section" id="crowdsourceSection"><div class="empty">Loading X / embassy...</div></div>
-  <div class="section" id="reportsSection"><div class="empty">No reports yet</div></div>
-  <div class="section" id="ridesSection"><div class="empty">No ride shares yet</div></div>
+  <div class="section" id="crowdsourceSection"><div class="empty">Loading advisories...</div></div>
+  <!-- Community reports and ride sharing hidden until real users are active -->
 </div>
 
 <div id="tab-intel" class="tab-content">
@@ -213,18 +212,14 @@ async function loadData(live) {
   const url = `${API}/routes?speed=${speed}&sort_by=${sort}&max_stops=${stops}&live=${!!live}&passengers=${pax}&budget=${budg}`;
   qs('timer').textContent = t('loading', 'Loading...');
   try {
-    const [routeRes, newsRes, reportsRes, ridesRes, crowdRes] = await Promise.all([
+    const [routeRes, newsRes, crowdRes] = await Promise.all([
       fetch(url),
       fetch(`${API}/news`).catch(() => null),
-      fetch(`${API}/reports`).catch(() => null),
-      fetch(`${API}/rideshares`).catch(() => null),
       fetch(`${API}/crowdsource`).catch(() => null),
     ]);
     const data = await routeRes.json();
     render(data);
     if (newsRes && newsRes.ok) renderNews(await newsRes.json());
-    if (reportsRes && reportsRes.ok) renderReports(await reportsRes.json());
-    if (ridesRes && ridesRes.ok) renderRides(await ridesRes.json());
     if (crowdRes && crowdRes.ok) renderCrowdsource(await crowdRes.json());
     qs('timer').textContent = live ? t('live_loaded', 'Live data loaded') : t('cached_data', 'Cached data');
     if (autoRefresh) startCountdown(120);
@@ -498,31 +493,44 @@ function renderRides(data) {
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function renderCrowdsource(data) {
-  let html = '<h2>' + t('crowdsource_title','X / Embassy / Telegram') + '</h2>';
+  let html = '<h2>' + t('crowdsource_title', 'Official Travel Advisories') + '</h2>';
   let hasItems = false;
+
+  // Embassy / government advisories (always shown first — most reliable)
+  if (data.embassy && data.embassy.length) {
+    hasItems = true;
+    data.embassy.forEach(i => {
+      // Color-code by source
+      const isUS = i.source && i.source.toLowerCase().includes('us state');
+      const accent = isUS ? '#3498db' : '#2ecc71';
+      html += `<div class="report" style="border-left:3px solid ${accent};padding-left:8px">
+        <strong style="color:${accent}">${esc(i.source)}</strong>
+        <div style="margin-top:2px">${esc(i.text)}</div>
+        ${i.published ? `<div style="font-size:10px;color:#666;margin-top:2px">${esc(i.published)}</div>` : ''}
+        ${i.link ? `<a href="${esc(i.link)}" target="_blank" style="font-size:10px;color:#3498db">Read full advisory →</a>` : ''}
+      </div>`;
+    });
+  }
+
+  // X / Twitter posts
   if (data.x && data.x.length) {
     hasItems = true;
+    html += `<h2 style="margin-top:8px">${t('x_posts_title','X / Twitter Posts')}</h2>`;
     data.x.forEach(i => {
       const by = i.author ? ` <span style="color:#888">@${esc(i.author)}</span>` : '';
       html += `<div class="report"><strong>X</strong>${by} ${esc(i.text)}${i.link ? ' <a href="'+esc(i.link)+'" target="_blank" onclick="event.stopPropagation()">→</a>' : ''}</div>`;
     });
-  } else {
-    html += `<div class="insight" style="border-color:#f39c12">
-      <strong>X / Twitter:</strong> No posts loaded.
-      Real data requires a <a href="https://developer.x.com" target="_blank" style="color:#3498db">Twitter API Bearer Token</a>.
-      Set <code style="background:#0f3460;padding:1px 4px;border-radius:2px">TWITTER_BEARER_TOKEN</code> in <code style="background:#0f3460;padding:1px 4px;border-radius:2px">.env</code> to enable live posts.
-    </div>`;
   }
-  if (data.embassy && data.embassy.length) {
-    hasItems = true;
-    data.embassy.forEach(i => { html += `<div class="report"><strong>${esc(i.source)}</strong> ${esc(i.text)}${i.link ? ' <a href="'+esc(i.link)+'" target="_blank">→</a>' : ''}</div>`; });
-  }
+
+  // Telegram
   if (data.telegram && data.telegram.length) {
     hasItems = true;
+    html += `<h2 style="margin-top:8px">Telegram</h2>`;
     data.telegram.forEach(i => { html += `<div class="report"><strong>Telegram</strong> ${esc(i.text)}</div>`; });
   }
+
   if (!hasItems) {
-    html += `<div class="empty">${t('no_crowdsource','No external feeds available')}</div>`;
+    html += `<div class="empty">${t('no_advisories','No advisories loaded')}</div>`;
   }
   qs('crowdsourceSection').innerHTML = html;
 }

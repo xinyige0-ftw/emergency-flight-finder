@@ -36,12 +36,15 @@ TWITTER_SEARCH_QUERIES = [
     "airspace closed gulf",
 ]
 
-# Embassy / travel advisory feeds (Atom/RSS)
+# Embassy / travel advisory feeds (Atom/RSS).
+# UK FCDO (Foreign, Commonwealth & Development Office): machine-readable Atom feeds, no auth.
+# US State Dept blocks scrapers with CAPTCHA; add manually if you get a working endpoint.
 EMBASSY_RSS = [
-    ("UK FCO Bahrain", "https://www.gov.uk/foreign-travel-advice/bahrain.atom"),
-    ("UK FCO Saudi", "https://www.gov.uk/foreign-travel-advice/saudi-arabia.atom"),
-    ("UK FCO Iran", "https://www.gov.uk/foreign-travel-advice/iran.atom"),
-    ("US Travel", "https://travel.state.gov/cis/rss/cis_notice.xml"),
+    ("UK FCDO Bahrain", "https://www.gov.uk/foreign-travel-advice/bahrain.atom"),
+    ("UK FCDO Saudi Arabia", "https://www.gov.uk/foreign-travel-advice/saudi-arabia.atom"),
+    ("UK FCDO Iran", "https://www.gov.uk/foreign-travel-advice/iran.atom"),
+    ("UK FCDO Iraq", "https://www.gov.uk/foreign-travel-advice/iraq.atom"),
+    ("UK FCDO UAE", "https://www.gov.uk/foreign-travel-advice/united-arab-emirates.atom"),
 ]
 
 # Optional: Telegram channels as RSS (user can set TELEGRAM_RSS_URLS as comma-separated)
