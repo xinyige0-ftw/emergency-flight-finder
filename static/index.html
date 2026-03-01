@@ -2,85 +2,155 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#e94560">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#c0392b">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="/manifest.json">
 <title>Emergency Flight Finder</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;color:#eee;font-size:13px;padding-bottom:60px;line-height:1.35}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:15px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;background:#0f1117;color:#e8e8e8;padding-bottom:80px;line-height:1.45;-webkit-font-smoothing:antialiased}
 
-.top{background:#e94560;padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
-.top h1{font-size:13px;font-weight:700}
-.top .lang{background:rgba(255,255,255,.2);border:none;color:#fff;padding:2px 6px;border-radius:3px;font-size:11px}
-.sub-bar{padding:4px 10px;text-align:center;font-size:11px;opacity:.9;background:#c0392b}
+/* ── Header ── */
+.top{background:#c0392b;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:center;gap:8px}
+.top h1{font-size:15px;font-weight:800;letter-spacing:.3px;color:#fff}
+.top .lang{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 11px;border-radius:8px;font-size:13px;min-height:38px;cursor:pointer}
 
-.reco{padding:8px 10px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}
-.reco .icon{font-size:18px}.reco .text{flex:1}.reco .text .reason{font-weight:400;font-size:10px;opacity:.9;margin-top:1px}
-.reco.go{background:#27ae60}.reco.wait{background:#f39c12;color:#000}.reco.wait_short{background:#e67e22}
+/* ── Status bar ── */
+.sub-bar{padding:7px 16px;text-align:center;font-size:12px;background:#1c1c2e;color:#888;border-bottom:1px solid #222}
 
-.bar{display:flex;gap:4px;padding:6px 8px;background:#16213e;overflow-x:auto;position:sticky;top:0;z-index:10;flex-wrap:wrap}
-.bar select,.bar button,.bar input{background:#0f3460;color:#fff;border:1px solid #333;border-radius:4px;padding:4px 6px;font-size:11px}
-.bar input{width:52px;text-align:center}
-.bar button{background:#e94560;border:none}.bar button.on{background:#2ecc71}
-.bar label{color:#888;font-size:10px;display:flex;align-items:center;gap:2px}
+/* ── Recommendation ── */
+.reco{padding:14px 16px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:12px}
+.reco .icon{font-size:26px;flex-shrink:0;line-height:1}
+.reco .text{flex:1}
+.reco .text .reason{font-weight:400;font-size:13px;opacity:.9;margin-top:4px;line-height:1.45}
+.reco.go{background:#145a2e;border-bottom:3px solid #27ae60}
+.reco.wait{background:#7d5700;color:#fff;border-bottom:3px solid #f0a500}
+.reco.wait_short{background:#7d3800;border-bottom:3px solid #e67e22}
 
-.section{padding:6px 10px}.section h2{font-size:11px;color:#e94560;margin-bottom:4px;text-transform:uppercase}
-.airspace{display:flex;flex-wrap:wrap;gap:2px}.tag{padding:2px 5px;border-radius:3px;font-size:10px;font-weight:600}
-.tag.closed{background:#c0392b}.tag.open{background:#27ae60}.tag.restricted{background:#f39c12;color:#000}
+/* ── Filter bar ── */
+.bar{background:#1c1c2e;border-bottom:1px solid #222;position:sticky;top:0;z-index:50}
+.bar-main{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center}
+.bar-main::-webkit-scrollbar{display:none}
+.bar-extra{display:none;padding:0 12px 10px;gap:6px;flex-wrap:wrap;align-items:center}
+.bar-extra.open{display:flex}
+.bar select,.bar input{background:#0d2040;color:#e8e8e8;border:1px solid #2a3a58;border-radius:8px;padding:8px 10px;font-size:13px;min-height:40px;flex-shrink:0;cursor:pointer}
+.bar input{width:70px;text-align:center}
+.bar button{color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;min-height:40px;flex-shrink:0;cursor:pointer}
+.bar .btn-live{background:#c0392b}
+.bar .btn-auto{background:#2a2a3e;border:1px solid #333}
+.bar .btn-auto.on{background:#145a2e;border-color:#27ae60}
+.bar .btn-filter{background:#2a2a3e;border:1px solid #333;font-size:12px}
+.bar label{color:#888;font-size:12px;display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap}
 
-.visa-alert{background:#1a1a2e;border:1px solid #f39c12;border-radius:4px;padding:4px 8px;margin:2px 0;font-size:10px}
+/* ── Sections ── */
+.section{padding:8px 14px}
+.section h2{font-size:11px;font-weight:700;color:#e94560;margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px}
+
+/* ── Airspace tags ── */
+.airspace{display:flex;flex-wrap:wrap;gap:5px}
+.tag{padding:5px 10px;border-radius:6px;font-size:12px;font-weight:700}
+.tag.closed{background:#7b241c;color:#f5b7b1}.tag.open{background:#145a2e;color:#a9dfbf}.tag.restricted{background:#7d5700;color:#fad7a0}
+
+/* ── Visa alerts ── */
+.visa-alert{background:#1c1c2e;border:1px solid #f39c12;border-radius:8px;padding:9px 12px;margin:4px 0;font-size:13px}
 .visa-alert.ok{border-color:#27ae60}.visa-alert.warn{border-color:#c0392b}
 
-.card{background:#16213e;border-radius:6px;margin:0 8px 6px;border-left:3px solid #f39c12}
-.card.high{border-color:#27ae60}.card.low{border-color:#c0392b}.card.changed{animation:pulse .5s 3}
-@keyframes pulse{0%,100%{border-color:#e94560}50%{border-color:#fff}}
-.card-head{display:flex;align-items:center;padding:8px 10px;cursor:pointer;gap:6px}
-.card-head .rank{font-size:16px;font-weight:700;color:#e94560;min-width:26px}
-.card-head .info{flex:1;min-width:0}.card-head .name{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card-head .badges{display:flex;gap:2px;flex-wrap:wrap;margin-top:2px}
-.card-head .meta{text-align:right;min-width:48px}.card-head .time{font-size:14px;font-weight:700}.card-head .price{color:#2ecc71;font-size:11px}
+/* ── Route cards ── */
+.card{background:#1c1c2e;border-radius:14px;margin:0 12px 10px;border-left:4px solid #f39c12;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.card.high{border-color:#27ae60}.card.low{border-color:#c0392b}
+.card.changed{animation:pulse .6s 3}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 2px #e9456080}50%{box-shadow:0 0 0 5px #e9456030}}
 
-.badge{padding:1px 4px;border-radius:2px;font-size:8px;font-weight:700}
-.badge.low-risk{background:#27ae60}.badge.med-risk{background:#f39c12;color:#000}.badge.high-risk{background:#c0392b}
-.badge.changed-badge{background:#e94560}.badge.seats-ok{background:#27ae60}.badge.seats-no{background:#c0392b}
-.badge.seats-unknown{background:#7f8c8d}.badge.over-budget{background:#c0392b}
+.card-head{display:flex;align-items:center;padding:14px;cursor:pointer;gap:10px;min-height:68px;user-select:none}
+.card-head .rank{font-size:24px;font-weight:800;color:#e94560;min-width:34px}
+.card-head .info{flex:1;min-width:0}
+.card-head .name{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px;color:#f0f0f0}
+.card-head .badges{display:flex;gap:4px;flex-wrap:wrap}
+.card-head .meta{text-align:right;flex-shrink:0;padding-left:6px}
+.card-head .time{font-size:11px;color:#888;line-height:1.3}
+.card-head .time strong{font-size:22px;font-weight:800;color:#fff;display:block;line-height:1.1}
+.card-head .price{color:#2ecc71;font-size:14px;font-weight:700;margin-top:3px}
 
-.card-body{padding:0 10px 8px;display:none;font-size:11px;line-height:1.4}
-.card-body.open{display:block}.card-body .row{padding:2px 0;border-bottom:1px solid #1a1a2e;display:flex;justify-content:space-between}
-.card-body .label{color:#888;font-size:10px}
-.leg{background:#0f3460;padding:5px 8px;border-radius:4px;margin:4px 0;font-size:11px}
-.leg .fn{font-weight:700}.leg .leg-badges{margin-top:2px}
-.status{padding:1px 4px;border-radius:2px;font-size:9px;font-weight:600;display:inline-block}
-.status.operating{background:#27ae60}.status.scheduled{background:#2980b9}.status.cancelled{background:#c0392b}.status.unknown{background:#7f8c8d}.status.delayed{background:#f39c12;color:#000}
-.actions{display:flex;gap:6px;margin-top:6px}
-.actions a{flex:1;text-align:center;padding:10px;border-radius:6px;text-decoration:none;font-weight:700;font-size:12px;min-height:40px;display:flex;align-items:center;justify-content:center}
-.actions .book{background:#2ecc71;color:#000}.actions .call{background:#3498db;color:#fff}
-.ground{background:#0f3460;padding:5px 8px;border-radius:4px;margin:4px 0;font-size:10px;color:#aaa}
+/* ── Badges ── */
+.badge{padding:3px 7px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.2px}
+.badge.low-risk{background:#145a2e;color:#a9dfbf}
+.badge.med-risk{background:#7d5700;color:#fad7a0}
+.badge.high-risk{background:#7b241c;color:#f5b7b1}
+.badge.changed-badge{background:#e94560;color:#fff}
+.badge.seats-ok{background:#145a2e;color:#a9dfbf}
+.badge.seats-no{background:#7b241c;color:#f5b7b1}
+.badge.seats-unknown{background:#333;color:#888}
+.badge.over-budget{background:#7b241c;color:#f5b7b1}
 
-.news-item{background:#16213e;border-radius:4px;padding:6px 8px;margin-bottom:4px;font-size:11px}
-.news-item .headline{font-weight:600}.news-item .meta{font-size:10px;color:#888;margin-top:1px}
-.news-item.high{border-left:2px solid #e94560}.news-item.medium{border-left:2px solid #f39c12}
-.airspace-alert{border-radius:4px;padding:6px 8px;margin-bottom:4px;font-size:11px;font-weight:600}
-.airspace-alert{background:#c0392b}.airspace-alert.reopen{background:#27ae60}
+/* ── Card body ── */
+.card-body{padding:0 14px 14px;display:none;font-size:13px;line-height:1.5}
+.card-body.open{display:block}
+.card-body .row{padding:8px 0;border-bottom:1px solid #232336;display:flex;justify-content:space-between;align-items:center}
+.card-body .label{color:#666;font-size:12px}
 
-.report,.ride{background:#16213e;border-radius:4px;padding:6px 8px;margin-bottom:4px;font-size:11px}
-.report .vote{background:#0f3460;border:none;color:#2ecc71;padding:2px 6px;border-radius:3px;font-size:10px;cursor:pointer;float:right}
-.ride .route{font-weight:700;font-size:12px}.ride .detail{font-size:10px;color:#888;margin-top:1px}
-.ride a{color:#3498db;text-decoration:none}
+/* ── Flight leg ── */
+.leg{background:#0d1f3c;padding:12px;border-radius:10px;margin:6px 0;font-size:13px}
+.leg .fn{font-weight:700;font-size:15px}
+.leg .leg-badges{margin-top:8px;display:flex;gap:4px;flex-wrap:wrap}
+.status{padding:4px 8px;border-radius:5px;font-size:11px;font-weight:700;display:inline-block}
+.status.operating{background:#145a2e;color:#a9dfbf}
+.status.scheduled{background:#1a4a7a;color:#aed6f1}
+.status.cancelled{background:#7b241c;color:#f5b7b1}
+.status.unknown{background:#333;color:#888}
+.status.delayed{background:#7d5700;color:#fad7a0}
 
-.tabs{display:flex;padding:0 8px;margin-top:4px}.tab{flex:1;text-align:center;padding:5px;font-size:10px;font-weight:600;color:#888;border-bottom:2px solid transparent;cursor:pointer}
-.tab.active{color:#e94560;border-color:#e94560}.tab-content{display:none}.tab-content.active{display:block}
+/* ── Book / Call buttons ── */
+.actions{display:flex;gap:8px;margin-top:10px}
+.actions a{flex:1;text-align:center;padding:13px 8px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center}
+.actions .book{background:#2ecc71;color:#000}
+.actions .call{background:#1a5276;color:#fff}
+.ground{background:#0d1f3c;padding:10px 12px;border-radius:8px;margin:6px 0;font-size:13px;color:#888}
 
-.steps{padding:6px 10px}.steps li{margin-bottom:3px;padding-left:2px;font-size:11px}
-.warn{padding:6px 10px;font-size:10px;text-align:center;font-weight:600;background:#f39c12;color:#000}
-.refresh-bar{position:fixed;bottom:0;left:0;right:0;background:#16213e;border-top:1px solid #333;padding:6px 10px;z-index:20;display:flex;justify-content:space-between;align-items:center}
-.refresh-bar .timer{font-size:11px;color:#888}.refresh-bar button{background:#e94560;color:#fff;border:none;padding:6px 12px;border-radius:4px;font-weight:700;font-size:11px}
-.loading,.empty{text-align:center;padding:20px;color:#888;font-size:12px}
+/* ── News ── */
+.news-item{background:#1c1c2e;border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px}
+.news-item .headline{font-weight:600;line-height:1.45;color:#f0f0f0}
+.news-item .meta{font-size:11px;color:#666;margin-top:5px}
+.news-item.high{border-left:3px solid #e94560}
+.news-item.medium{border-left:3px solid #f39c12}
+.airspace-alert{border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;font-weight:600}
+.airspace-alert{background:#7b241c;color:#f5b7b1}
+.airspace-alert.reopen{background:#145a2e;color:#a9dfbf}
 
-.insight{background:#16213e;border-radius:4px;padding:5px 8px;margin-bottom:4px;font-size:10px;border-left:2px solid #3498db}
-.insight.trend_up{border-color:#27ae60}.insight.trend_down{border-color:#c0392b}.insight.stable{border-color:#2ecc71}
+/* ── Community ── */
+.report{background:#1c1c2e;border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;line-height:1.5}
+
+/* ── Tabs ── */
+.tabs{display:flex;background:#1c1c2e;border-top:1px solid #222;border-bottom:1px solid #222;margin-top:8px;position:sticky;top:57px;z-index:40}
+.tab{flex:1;text-align:center;padding:8px 2px 9px;font-size:10px;font-weight:600;color:#555;border-bottom:3px solid transparent;cursor:pointer;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;user-select:none;transition:color .15s}
+.tab-icon{font-size:18px;line-height:1}
+.tab.active{color:#e94560;border-color:#e94560;background:#20203a}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ── Steps ── */
+.steps{padding:10px 16px}
+.steps li{margin-bottom:10px;padding-left:4px;font-size:14px;line-height:1.5}
+
+/* ── Warning ── */
+.warn{padding:10px 16px;font-size:12px;text-align:center;font-weight:600;background:#7d5700;color:#fad7a0}
+
+/* ── Bottom refresh bar ── */
+.refresh-bar{position:fixed;bottom:0;left:0;right:0;background:#1c1c2e;border-top:1px solid #2a2a3e;padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom));z-index:60;display:flex;justify-content:space-between;align-items:center}
+.refresh-bar .timer{font-size:12px;color:#666}
+.refresh-bar button{background:#c0392b;color:#fff;border:none;padding:10px 22px;border-radius:10px;font-weight:700;font-size:14px;min-height:44px;cursor:pointer}
+
+/* ── Misc ── */
+.loading,.empty{text-align:center;padding:28px 16px;color:#555;font-size:13px}
+.insight{background:#1c1c2e;border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;border-left:3px solid #1a5276;line-height:1.5}
+.insight.trend_up{border-color:#27ae60}
+.insight.trend_down{border-color:#c0392b}
+.insight.stable{border-color:#2ecc71}
+
+/* ── Alerts tab cards ── */
+.alert-card{background:#1c1c2e;border-radius:12px;padding:14px;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -98,26 +168,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
 <div id="recoSection"></div>
 
 <div class="bar">
-  <select id="speed" title="Speed priority">
-    <option value="balanced" id="opt_balanced">Balanced</option>
-    <option value="soonest" id="opt_soonest">Soonest</option>
-    <option value="shortest_total" id="opt_shortest">Shortest</option>
-  </select>
-  <select id="sortBy" title="Sort by">
-    <option value="score" id="opt_best">Best score</option>
-    <option value="depart" id="opt_depart">Departure</option>
-    <option value="price" id="opt_price">Price</option>
-    <option value="duration" id="opt_dur">Duration</option>
-  </select>
-  <select id="maxStops" title="Flight connections">
-    <option value="3" id="opt_any">Any</option>
-    <option value="1" id="opt_1conn">1 connection max</option>
-    <option value="0" id="opt_nonstop">Nonstop flight</option>
-  </select>
-  <label><span id="lbl_pax">Pax</span><input id="passengers" type="number" min="1" max="9" value="1"></label>
-  <label><span id="lbl_budget">Budget</span><input id="budget" type="number" min="500" max="50000" step="500" value="10000"></label>
-  <button onclick="loadData(true)" id="btn_live">Live</button>
-  <button id="autoBtn" onclick="toggleAuto()">Auto: OFF</button>
+  <div class="bar-main">
+    <select id="speed" title="Speed priority">
+      <option value="balanced" id="opt_balanced">Balanced</option>
+      <option value="soonest" id="opt_soonest">Soonest</option>
+      <option value="shortest_total" id="opt_shortest">Shortest</option>
+    </select>
+    <select id="sortBy" title="Sort by">
+      <option value="score" id="opt_best">Best score</option>
+      <option value="depart" id="opt_depart">Departure</option>
+      <option value="price" id="opt_price">Price</option>
+      <option value="duration" id="opt_dur">Duration</option>
+    </select>
+    <select id="maxStops" title="Flight connections">
+      <option value="3" id="opt_any">Any stops</option>
+      <option value="1" id="opt_1conn">1 connection</option>
+      <option value="0" id="opt_nonstop">Nonstop</option>
+    </select>
+    <button class="btn-filter" onclick="toggleFilters()" id="btn_filter">⚙ More</button>
+    <button class="btn-live" onclick="loadData(true)" id="btn_live">⟳ Live</button>
+    <button class="btn-auto" id="autoBtn" onclick="toggleAuto()">Auto: OFF</button>
+  </div>
+  <div class="bar-extra" id="barExtra">
+    <label><span id="lbl_pax">Passengers</span><input id="passengers" type="number" min="1" max="9" value="1"></label>
+    <label><span id="lbl_budget">Budget $</span><input id="budget" type="number" min="500" max="50000" step="500" value="10000"></label>
+  </div>
 </div>
 
 <div id="airspaceSection" class="section"></div>
@@ -126,11 +201,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
 <div id="routesContainer"><div class="loading" id="routesLoading">Loading routes...</div></div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('plan')" id="tab_plan_label">Action Plan</div>
-  <div class="tab" onclick="showTab('news')" id="tab_news_label">News</div>
-  <div class="tab" onclick="showTab('community')" id="tab_community_label">Community</div>
-  <div class="tab" onclick="showTab('intel')" id="tab_intel_label">Intel</div>
-  <div class="tab" onclick="showTab('alerts')" id="tab_alerts_label">Alerts</div>
+  <div class="tab active" onclick="showTab('plan')"><span class="tab-icon">📋</span><span id="tab_plan_label">Plan</span></div>
+  <div class="tab" onclick="showTab('news')"><span class="tab-icon">📰</span><span id="tab_news_label">News</span></div>
+  <div class="tab" onclick="showTab('community')"><span class="tab-icon">🏛️</span><span id="tab_community_label">Advisories</span></div>
+  <div class="tab" onclick="showTab('intel')"><span class="tab-icon">📡</span><span id="tab_intel_label">Intel</span></div>
+  <div class="tab" onclick="showTab('alerts')"><span class="tab-icon">🔔</span><span id="tab_alerts_label">Alerts</span></div>
 </div>
 
 <div id="tab-plan" class="tab-content active">
@@ -157,9 +232,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
 <div id="tab-alerts" class="tab-content">
   <div class="section">
     <h2 id="alerts_title">Get Notified</h2>
-    <div style="background:#16213e;border-radius:6px;padding:10px;margin-bottom:8px;border-left:3px solid #2ecc71">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px" id="alerts_what_title">What you'll receive</div>
-      <ul style="font-size:11px;padding-left:16px;color:#ccc;line-height:1.6">
+    <div class="alert-card" style="border-left:3px solid #27ae60">
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px" id="alerts_what_title">📬 What you'll receive</div>
+      <ul style="font-size:13px;padding-left:18px;color:#ccc;line-height:1.8">
         <li id="alert_item_1">Flight status changes (cancelled, delayed, operating)</li>
         <li id="alert_item_2">Price drops or increases &gt; $50</li>
         <li id="alert_item_3">New routes becoming available</li>
@@ -168,15 +243,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
       </ul>
     </div>
 
-    <div style="background:#16213e;border-radius:6px;padding:10px;margin-bottom:8px;border-left:3px solid #3498db">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px" id="alerts_setup_title">Setup WhatsApp Alerts</div>
-      <ol style="font-size:11px;padding-left:16px;color:#ccc;line-height:1.8">
+    <div class="alert-card" style="border-left:3px solid #25d366">
+      <div style="font-size:14px;font-weight:700;margin-bottom:10px" id="alerts_setup_title">💬 Setup WhatsApp Alerts</div>
+      <ol style="font-size:13px;padding-left:18px;color:#ccc;line-height:2">
         <li id="alerts_step_1">Open WhatsApp on your phone</li>
-        <li id="alerts_step_2">Send <strong style="color:#2ecc71;user-select:all">join spoken-yet</strong> to <strong style="color:#eee;user-select:all">+1 (415) 523-8886</strong></li>
+        <li id="alerts_step_2">Send <strong style="color:#2ecc71;background:#0d2040;padding:2px 6px;border-radius:4px;user-select:all">join spoken-yet</strong> to <strong style="color:#fff">+1 (415) 523-8886</strong></li>
         <li id="alerts_step_3">Wait for confirmation reply from Twilio</li>
-        <li id="alerts_step_4">Contact the operator to add your number for live alerts</li>
+        <li id="alerts_step_4">Contact the operator to register your number</li>
       </ol>
-      <div style="margin-top:6px;font-size:10px;color:#888" id="alerts_note">Note: This uses the Twilio sandbox. You must complete step 2 before receiving any messages.</div>
+      <div style="margin-top:8px;font-size:12px;color:#666" id="alerts_note">Note: Twilio sandbox — must complete step 2 first.</div>
     </div>
   </div>
 </div>
@@ -234,7 +309,7 @@ function render(data) {
   const rec = data.recommendation;
   if (rec) {
     const cls = rec.action === 'go_now' ? 'go' : rec.action === 'wait' ? 'wait' : 'wait_short';
-    const icon = rec.action === 'go_now' ? '>>>' : '...';
+    const icon = rec.action === 'go_now' ? '✈️' : rec.action === 'wait' ? '⏳' : '⚠️';
     const actionLabel = rec.action === 'go_now' ? t('go_now','GO NOW') : t('wait','WAIT');
     const confLabel = translateConfidence(rec.confidence);
     qs('recoSection').innerHTML = `<div class="reco ${cls}">
@@ -641,6 +716,12 @@ async function loadHistory() {
       qs('historySection').innerHTML = html;
     }
   } catch(e) {}
+}
+
+function toggleFilters() {
+  const el = qs('barExtra');
+  el.classList.toggle('open');
+  qs('btn_filter').textContent = el.classList.contains('open') ? '✕ Less' : '⚙ More';
 }
 
 function toggleAuto() {
