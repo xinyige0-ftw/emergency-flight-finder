@@ -20,9 +20,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
 .reco .icon{font-size:18px}.reco .text{flex:1}.reco .text .reason{font-weight:400;font-size:10px;opacity:.9;margin-top:1px}
 .reco.go{background:#27ae60}.reco.wait{background:#f39c12;color:#000}.reco.wait_short{background:#e67e22}
 
-.bar{display:flex;gap:4px;padding:6px 8px;background:#16213e;overflow-x:auto;position:sticky;top:0;z-index:10}
-.bar select,.bar button{background:#0f3460;color:#fff;border:1px solid #333;border-radius:4px;padding:4px 6px;font-size:11px}
+.bar{display:flex;gap:4px;padding:6px 8px;background:#16213e;overflow-x:auto;position:sticky;top:0;z-index:10;flex-wrap:wrap}
+.bar select,.bar button,.bar input{background:#0f3460;color:#fff;border:1px solid #333;border-radius:4px;padding:4px 6px;font-size:11px}
+.bar input{width:52px;text-align:center}
 .bar button{background:#e94560;border:none}.bar button.on{background:#2ecc71}
+.bar label{color:#888;font-size:10px;display:flex;align-items:center;gap:2px}
 
 .section{padding:6px 10px}.section h2{font-size:11px;color:#e94560;margin-bottom:4px;text-transform:uppercase}
 .airspace{display:flex;flex-wrap:wrap;gap:2px}.tag{padding:2px 5px;border-radius:3px;font-size:10px;font-weight:600}
@@ -42,7 +44,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
 
 .badge{padding:1px 4px;border-radius:2px;font-size:8px;font-weight:700}
 .badge.low-risk{background:#27ae60}.badge.med-risk{background:#f39c12;color:#000}.badge.high-risk{background:#c0392b}
-.badge.changed-badge{background:#e94560}.badge.seats-ok{background:#27ae60}.badge.seats-no{background:#c0392b}.badge.over-budget{background:#c0392b}
+.badge.changed-badge{background:#e94560}.badge.seats-ok{background:#27ae60}.badge.seats-no{background:#c0392b}
+.badge.seats-unknown{background:#7f8c8d}.badge.over-budget{background:#c0392b}
 
 .card-body{padding:0 10px 8px;display:none;font-size:11px;line-height:1.4}
 .card-body.open{display:block}.card-body .row{padding:2px 0;border-bottom:1px solid #1a1a2e;display:flex;justify-content:space-between}
@@ -96,36 +99,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
 
 <div class="bar">
   <select id="speed" title="Speed priority">
-    <option value="balanced">Balanced</option>
-    <option value="soonest">Soonest</option>
-    <option value="shortest_total">Shortest</option>
+    <option value="balanced" id="opt_balanced">Balanced</option>
+    <option value="soonest" id="opt_soonest">Soonest</option>
+    <option value="shortest_total" id="opt_shortest">Shortest</option>
   </select>
   <select id="sortBy" title="Sort by">
-    <option value="score">Best score</option>
-    <option value="depart">Departure</option>
-    <option value="price">Price</option>
-    <option value="duration">Duration</option>
+    <option value="score" id="opt_best">Best score</option>
+    <option value="depart" id="opt_depart">Departure</option>
+    <option value="price" id="opt_price">Price</option>
+    <option value="duration" id="opt_dur">Duration</option>
   </select>
   <select id="maxStops" title="Max stops">
     <option value="2">2 stops</option>
     <option value="1">1 stop</option>
-    <option value="0">Direct</option>
+    <option value="0" id="opt_direct">Direct</option>
   </select>
-  <button onclick="loadData(true)">Live</button>
+  <label><span id="lbl_pax">Pax</span><input id="passengers" type="number" min="1" max="9" value="1"></label>
+  <label><span id="lbl_budget">Budget</span><input id="budget" type="number" min="500" max="50000" step="500" value="10000"></label>
+  <button onclick="loadData(true)" id="btn_live">Live</button>
   <button id="autoBtn" onclick="toggleAuto()">Auto: OFF</button>
 </div>
 
 <div id="airspaceSection" class="section"></div>
 <div id="visaSection" class="section" style="display:none"></div>
 <div id="escapeSection" class="section" style="display:none"></div>
-<div id="routesContainer"><div class="loading">Loading routes...</div></div>
+<div id="routesContainer"><div class="loading" id="routesLoading">Loading routes...</div></div>
 
-<!-- Tabbed sections: News / Community / Intel -->
 <div class="tabs">
-  <div class="tab active" onclick="showTab('plan')">Action Plan</div>
-  <div class="tab" onclick="showTab('news')">News</div>
-  <div class="tab" onclick="showTab('community')">Community</div>
-  <div class="tab" onclick="showTab('intel')">Intel</div>
+  <div class="tab active" onclick="showTab('plan')" id="tab_plan_label">Action Plan</div>
+  <div class="tab" onclick="showTab('news')" id="tab_news_label">News</div>
+  <div class="tab" onclick="showTab('community')" id="tab_community_label">Community</div>
+  <div class="tab" onclick="showTab('intel')" id="tab_intel_label">Intel</div>
 </div>
 
 <div id="tab-plan" class="tab-content active">
@@ -149,11 +153,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;
   <div class="section" id="historySection"></div>
 </div>
 
-<div class="warn">Flight data changes rapidly during conflict. Always confirm with the airline.</div>
+<div class="warn" id="warnText">Flight data changes rapidly during conflict. Always confirm with the airline.</div>
 
 <div class="refresh-bar">
   <span class="timer" id="timer">—</span>
-  <button onclick="loadData(true)">Refresh Now</button>
+  <button onclick="loadData(true)" id="btn_refresh">Refresh Now</button>
 </div>
 
 <script>
@@ -161,11 +165,13 @@ const API = '/api';
 let autoRefresh = false, countdown = 0, countdownTimer = null, currentLang = 'en', T = {};
 
 function qs(id) { return document.getElementById(id); }
+function t(key, fallback) { return T[key] || fallback || key; }
 
 async function loadData(live) {
   const speed = qs('speed').value, sort = qs('sortBy').value, stops = qs('maxStops').value;
-  const url = `${API}/routes?speed=${speed}&sort_by=${sort}&max_stops=${stops}&live=${!!live}`;
-  qs('timer').textContent = 'Loading...';
+  const pax = qs('passengers').value || 1, budg = qs('budget').value || 10000;
+  const url = `${API}/routes?speed=${speed}&sort_by=${sort}&max_stops=${stops}&live=${!!live}&passengers=${pax}&budget=${budg}`;
+  qs('timer').textContent = t('loading', 'Loading...');
   try {
     const [routeRes, newsRes, reportsRes, ridesRes, crowdRes] = await Promise.all([
       fetch(url),
@@ -180,50 +186,48 @@ async function loadData(live) {
     if (reportsRes && reportsRes.ok) renderReports(await reportsRes.json());
     if (ridesRes && ridesRes.ok) renderRides(await ridesRes.json());
     if (crowdRes && crowdRes.ok) renderCrowdsource(await crowdRes.json());
-    qs('timer').textContent = live ? 'Live data loaded' : 'Cached data';
+    qs('timer').textContent = live ? t('live_loaded', 'Live data loaded') : t('cached_data', 'Cached data');
     if (autoRefresh) startCountdown(120);
   } catch (e) {
-    qs('timer').textContent = 'OFFLINE — using cached data';
+    qs('timer').textContent = t('offline_cached', 'OFFLINE — using cached data');
   }
 }
 
 function render(data) {
   qs('updated').textContent = data.updated_ast + '  |  ' + data.scenario;
 
-  // Recommendation
   const rec = data.recommendation;
   if (rec) {
     const cls = rec.action === 'go_now' ? 'go' : rec.action === 'wait' ? 'wait' : 'wait_short';
     const icon = rec.action === 'go_now' ? '>>>' : '...';
     qs('recoSection').innerHTML = `<div class="reco ${cls}">
       <span class="icon">${icon}</span>
-      <div class="text">${rec.action === 'go_now' ? (T.go_now||'GO NOW') : (T.wait||'WAIT')}
+      <div class="text">${rec.action === 'go_now' ? t('go_now','GO NOW') : t('wait','WAIT')}
         — ${rec.confidence} confidence<div class="reason">${rec.reason}</div></div></div>`;
   }
 
-  // Airspace
-  let air = '<h2>' + (T.airspace||'Airspace') + '</h2><div class="airspace">';
+  let air = '<h2>' + t('airspace','Airspace') + '</h2><div class="airspace">';
   data.airspace.closed.forEach(c => air += `<span class="tag closed">${c}</span>`);
   data.airspace.restricted.forEach(c => air += `<span class="tag restricted">${c}</span>`);
   data.airspace.open.forEach(c => air += `<span class="tag open">${c}</span>`);
   air += '</div>';
   qs('airspaceSection').innerHTML = air;
 
-  // Visa checks
   if (data.visa_checks && data.visa_checks.length) {
-    let vHtml = '<h2>Transit Visa</h2>';
+    let vHtml = '<h2>' + t('transit_visa','Transit Visa') + '</h2>';
     data.visa_checks.forEach(v => {
       const cls = v.visa_required === false ? 'ok' : v.visa_required === true ? 'warn' : '';
-      const icon = v.visa_required === false ? 'NO VISA NEEDED' : v.visa_required === true ? 'VISA REQUIRED' : 'CHECK MANUALLY';
+      const icon = v.visa_required === false ? t('no_visa','NO VISA NEEDED')
+        : v.visa_required === true ? t('visa_required','VISA REQUIRED')
+        : t('check_manually','CHECK MANUALLY');
       vHtml += `<div class="visa-alert ${cls}"><strong>${v.hub}</strong>: ${icon} — ${v.notes}</div>`;
     });
     qs('visaSection').innerHTML = vHtml;
     qs('visaSection').style.display = 'block';
   }
 
-  // Escape routes
   if (data.escape_routes && data.escape_routes.length) {
-    let esc = '<h2>Ground Escape</h2><div class="airspace">';
+    let esc = '<h2>' + t('ground_escape','Ground Escape') + '</h2><div class="airspace">';
     data.escape_routes.forEach(e => {
       const st = e.status === 'likely_open' ? 'open' : e.status === 'closed' ? 'closed' : 'restricted';
       esc += `<span class="tag ${st}" style="margin:2px">${e.from} → ${e.to} (${e.hours}h)</span>`;
@@ -233,7 +237,6 @@ function render(data) {
     qs('escapeSection').style.display = 'block';
   }
 
-  // Routes
   let html = '';
   data.routes.forEach((r, i) => {
     const rank = i + 1;
@@ -242,10 +245,16 @@ function render(data) {
     const price = r.price_economy ? `$${r.price_economy.toLocaleString()}` : '—';
 
     let badges = '';
-    badges += r.risk === 'low' ? '<span class="badge low-risk">LOW RISK</span>'
-      : r.risk === 'high' ? '<span class="badge high-risk">HIGH RISK</span>'
-      : '<span class="badge med-risk">MED RISK</span>';
-    if (r.changed) badges += '<span class="badge changed-badge">CHANGED</span>';
+    badges += r.risk === 'low' ? `<span class="badge low-risk">${t('low_risk','LOW RISK')}</span>`
+      : r.risk === 'high' ? `<span class="badge high-risk">${t('high_risk','HIGH RISK')}</span>`
+      : `<span class="badge med-risk">${t('med_risk','MED RISK')}</span>`;
+
+    if (r.seats_status === 'ok') badges += `<span class="badge seats-ok">${t('seats_ok','SEATS OK')}</span>`;
+    else if (r.seats_status === 'sold_out') badges += `<span class="badge seats-no">${t('sold_out','SOLD OUT')}</span>`;
+    else badges += `<span class="badge seats-unknown">${t('seats_unknown','SEATS ?')}</span>`;
+
+    if (r.over_budget) badges += `<span class="badge over-budget">${t('over_budget','OVER BUDGET')}</span>`;
+    if (r.changed) badges += `<span class="badge changed-badge">${t('changed','CHANGED')}</span>`;
 
     html += `<div class="card ${rel} ${changed}" onclick="toggle(this)">
       <div class="card-head">
@@ -260,32 +269,34 @@ function render(data) {
         </div>
       </div>
       <div class="card-body">
-        <div class="row"><span class="label">${T.departs||'Departs'}</span><span>${r.depart_ast || '—'}</span></div>
-        <div class="row"><span class="label">${T.arrives||'Arrives'}</span><span>${r.arrive_cst || '—'}</span></div>
-        <div class="row"><span class="label">Wait</span><span>${r.wait_hours}h</span></div>
-        <div class="row"><span class="label">Ground</span><span>${r.ground_hours}h</span></div>
-        <div class="row"><span class="label">Flight</span><span>${r.flight_hours}h</span></div>
-        <div class="row"><span class="label">Stops</span><span>${r.num_stops}</span></div>
-        <div class="row"><span class="label">Economy</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
-        <div class="row"><span class="label">Business</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
-        <div class="row"><span class="label">Score</span><span>${r.score} (lower = better)</span></div>
+        <div class="row"><span class="label">${t('departs','Departs')}</span><span>${r.depart_ast || '—'}</span></div>
+        <div class="row"><span class="label">${t('arrives','Arrives')}</span><span>${r.arrive_cst || '—'}</span></div>
+        <div class="row"><span class="label">${t('wait_label','Wait')}</span><span>${r.wait_hours}h</span></div>
+        <div class="row"><span class="label">${t('ground','Ground')}</span><span>${r.ground_hours}h</span></div>
+        <div class="row"><span class="label">${t('flight','Flight')}</span><span>${r.flight_hours}h</span></div>
+        <div class="row"><span class="label">${t('stops','Stops')}</span><span>${r.num_stops}</span></div>
+        <div class="row"><span class="label">${t('economy','Economy')}</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
+        <div class="row"><span class="label">${t('business','Business')}</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
+        <div class="row"><span class="label">${t('score','Score')}</span><span>${r.score} (${t('lower_better','lower = better')})</span></div>
         ${r.ground.map(g => `<div class="ground">${g.from} → ${g.to} via ${g.via} (~${g.hours}h)</div>`).join('')}
         ${r.legs.map(l => {
           let lb = '';
-          if (l.seats_available === true) lb += '<span class="badge seats-ok">SEATS OK</span>';
-          if (l.seats_available === false) lb += '<span class="badge seats-no">SOLD OUT</span>';
-          if (l.over_budget) lb += '<span class="badge over-budget">OVER BUDGET</span>';
+          if (l.seats_available === true) lb += `<span class="badge seats-ok">${t('seats_ok','SEATS OK')}</span>`;
+          else if (l.seats_available === false) lb += `<span class="badge seats-no">${t('sold_out','SOLD OUT')}</span>`;
+          else lb += `<span class="badge seats-unknown">${t('seats_unknown','SEATS ?')}</span>`;
+          if (l.over_budget) lb += `<span class="badge over-budget">${t('over_budget','OVER BUDGET')}</span>`;
+          if (l.price_economy) lb += `<span class="badge" style="background:#2ecc71;color:#000">$${l.price_economy.toLocaleString()}</span>`;
           if (l.price_source) lb += `<span class="badge" style="background:#555">via ${l.price_source}</span>`;
           return `<div class="leg">
             <span class="fn">${l.flight}</span> ${l.airline}
             <span class="status ${l.status}">${l.status.toUpperCase()}</span><br>
             ${l.from} → ${l.to} &nbsp; ${l.duration}h &nbsp; ${l.aircraft}
-            ${lb ? '<div class="leg-badges">'+lb+'</div>' : ''}
+            <div class="leg-badges">${lb}</div>
           </div>`;
         }).join('')}
         <div class="actions">
-          ${r.booking_urls.map(u => `<a class="book" href="${u}" target="_blank" rel="noopener">${T.book_now||'BOOK NOW'}</a>`).join('')}
-          ${r.contacts.map(c => `<a class="call" href="tel:${c.replace(/[^+0-9]/g,'')}">${T.call||'CALL'} ${c}</a>`).join('')}
+          ${r.booking_urls.map(u => `<a class="book" href="${u}" target="_blank" rel="noopener">${t('book_now','BOOK NOW')}</a>`).join('')}
+          ${r.contacts.map(c => `<a class="call" href="tel:${c.replace(/[^+0-9]/g,'')}">${t('call','CALL')} ${c}</a>`).join('')}
         </div>
         ${r.notes ? `<div style="color:#888;margin-top:8px;font-size:12px">${r.notes}</div>` : ''}
       </div>
@@ -293,29 +304,29 @@ function render(data) {
   });
   qs('routesContainer').innerHTML = html;
 
-  // Patterns
   if (data.patterns && data.patterns.length) {
-    let pHtml = '<h2>Trend Analysis</h2>';
+    let pHtml = '<h2>' + t('trend_analysis','Trend Analysis') + '</h2>';
     data.patterns.forEach(p => {
       pHtml += `<div class="insight ${p.type||''}">${p.message}${p.confidence ? ' <span style="opacity:.6">('+p.confidence+')</span>' : ''}</div>`;
     });
     qs('patternsSection').innerHTML = pHtml;
   }
 
-  // Steps
   qs('stepsList').innerHTML = `
-    <li>Cross to Saudi via King Fahd Causeway</li>
-    <li>Fly Dammam → Riyadh (~1h15m) or drive (~4h)</li>
-    <li>Call airline to confirm flight is operating</li>
-    <li>Book fastest CONFIRMED option</li>
-    <li>Backup: Turkish Airlines via Istanbul (daily)</li>
-    <li>Passport + cash (SAR & USD) + phone charger</li>`;
+    <li>${t('step_1','Cross to Saudi via King Fahd Causeway')}</li>
+    <li>${t('step_2','Fly Dammam → Riyadh (~1h15m) or drive (~4h)')}</li>
+    <li>${t('step_3','Call airline to confirm flight is operating')}</li>
+    <li>${t('step_4','Book fastest CONFIRMED option')}</li>
+    <li>${t('step_5','Backup: Turkish Airlines via Istanbul (daily)')}</li>
+    <li>${t('step_6','Passport + cash (SAR & USD) + phone charger')}</li>`;
+
+  qs('warnText').textContent = t('confirm_airline', 'Flight data changes rapidly during conflict. Always confirm with the airline.');
 
   if (data.routes.some(r => r.changed)) { try { navigator.vibrate?.(200); } catch(e) {} }
 }
 
 function renderNews(data) {
-  let html = '<h2>Conflict News</h2>';
+  let html = '<h2>' + t('conflict_news','Conflict News') + '</h2>';
   if (data.airspace_alerts && data.airspace_alerts.length) {
     data.airspace_alerts.forEach(a => {
       const cls = a.type === 'potential_reopening' ? 'reopen' : '';
@@ -330,13 +341,13 @@ function renderNews(data) {
       </div>`;
     });
   } else {
-    html += '<div class="empty">No relevant conflict news found</div>';
+    html += `<div class="empty">${t('no_news','No relevant conflict news found')}</div>`;
   }
   qs('newsSection').innerHTML = html;
 }
 
 function renderReports(data) {
-  let html = '<h2>Community Reports</h2>';
+  let html = '<h2>' + t('community_reports','Community Reports') + '</h2>';
   if (data.reports && data.reports.length) {
     data.reports.forEach(r => {
       html += `<div class="report">
@@ -347,13 +358,13 @@ function renderReports(data) {
       </div>`;
     });
   } else {
-    html += '<div class="empty">No community reports yet. Be the first to report!</div>';
+    html += `<div class="empty">${t('no_reports','No community reports yet. Be the first to report!')}</div>`;
   }
   qs('reportsSection').innerHTML = html;
 }
 
 function renderRides(data) {
-  let html = '<h2>Ride Sharing</h2>';
+  let html = '<h2>' + t('ride_sharing','Ride Sharing') + '</h2>';
   if (data.rides && data.rides.length) {
     data.rides.forEach(r => {
       html += `<div class="ride">
@@ -363,25 +374,29 @@ function renderRides(data) {
       </div>`;
     });
   } else {
-    html += '<div class="empty">No rides posted yet</div>';
+    html += `<div class="empty">${t('no_rides','No rides posted yet')}</div>`;
   }
   qs('ridesSection').innerHTML = html;
 }
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function renderCrowdsource(data) {
-  let html = '<h2>X / Embassy / Telegram</h2>';
+  let html = '<h2>' + t('crowdsource_title','X / Embassy / Telegram') + '</h2>';
+  let hasItems = false;
   if (data.x && data.x.length) {
-    data.x.forEach(i => { html += `<div class="report"><strong>X</strong> ${esc(i.text)}${i.link ? ' <a href="${esc(i.link)}" target="_blank">→</a>' : ''}</div>`; });
+    hasItems = true;
+    data.x.forEach(i => { html += `<div class="report"><strong>X</strong> ${esc(i.text)}${i.link ? ' <a href="'+esc(i.link)+'" target="_blank">→</a>' : ''}</div>`; });
   }
   if (data.embassy && data.embassy.length) {
-    data.embassy.forEach(i => { html += `<div class="report"><strong>${esc(i.source)}</strong> ${esc(i.text)}${i.link ? ' <a href="${esc(i.link)}" target="_blank">→</a>' : ''}</div>`; });
+    hasItems = true;
+    data.embassy.forEach(i => { html += `<div class="report"><strong>${esc(i.source)}</strong> ${esc(i.text)}${i.link ? ' <a href="'+esc(i.link)+'" target="_blank">→</a>' : ''}</div>`; });
   }
   if (data.telegram && data.telegram.length) {
+    hasItems = true;
     data.telegram.forEach(i => { html += `<div class="report"><strong>Telegram</strong> ${esc(i.text)}</div>`; });
   }
-  if (!(data.x && data.x.length) && !(data.embassy && data.embassy.length) && !(data.telegram && data.telegram.length)) {
-    html += '<div class="empty">No external feed (set NITTER_INSTANCE / TELEGRAM_RSS_URLS if needed)</div>';
+  if (!hasItems) {
+    html += `<div class="empty">${t('no_crowdsource','No external feeds available')}</div>`;
   }
   qs('crowdsourceSection').innerHTML = html;
 }
@@ -409,7 +424,7 @@ async function loadHistory() {
     const res = await fetch(`${API}/history`);
     const data = await res.json();
     if (data.conflicts) {
-      let html = '<h2>Historical Conflict Patterns</h2>';
+      let html = '<h2>' + t('historical_patterns','Historical Conflict Patterns') + '</h2>';
       data.conflicts.forEach(c => {
         html += `<div class="insight"><strong>${c.conflict}</strong>: ${c.notes}
           ${c.airspace_recovery_days != null ? ' · Airspace recovered in '+c.airspace_recovery_days+'d' : ' · Airspace did not recover'}
@@ -422,10 +437,10 @@ async function loadHistory() {
 
 function toggleAuto() {
   autoRefresh = !autoRefresh;
-  qs('autoBtn').textContent = autoRefresh ? 'Auto: ON' : 'Auto: OFF';
+  qs('autoBtn').textContent = autoRefresh ? t('auto_on','Auto: ON') : t('auto_off','Auto: OFF');
   qs('autoBtn').classList.toggle('on', autoRefresh);
   if (autoRefresh) loadData(false);
-  else { clearInterval(countdownTimer); qs('timer').textContent = 'Auto-refresh off'; }
+  else { clearInterval(countdownTimer); qs('timer').textContent = ''; }
 }
 
 function startCountdown(seconds) {
@@ -434,9 +449,29 @@ function startCountdown(seconds) {
   countdownTimer = setInterval(() => {
     countdown--;
     const m = Math.floor(countdown/60), s = countdown%60;
-    qs('timer').textContent = `Next refresh: ${m}m ${s.toString().padStart(2,'0')}s`;
+    qs('timer').textContent = `${t('next_refresh','Next refresh')}: ${m}m ${s.toString().padStart(2,'0')}s`;
     if (countdown <= 0) { clearInterval(countdownTimer); loadData(false); }
   }, 1000);
+}
+
+function applyTranslationsToUI() {
+  qs('titleText').textContent = t('title', 'EMERGENCY FLIGHT FINDER');
+  qs('btn_refresh').textContent = t('refresh', 'Refresh Now');
+  qs('btn_live').textContent = t('live', 'Live');
+  qs('lbl_pax').textContent = t('passengers', 'Pax');
+  qs('lbl_budget').textContent = t('budget', 'Budget');
+  qs('tab_plan_label').textContent = t('action_plan', 'Action Plan');
+  qs('tab_news_label').textContent = t('news', 'News');
+  qs('tab_community_label').textContent = t('community', 'Community');
+  qs('tab_intel_label').textContent = t('intel', 'Intel');
+  qs('opt_balanced').textContent = t('balanced', 'Balanced');
+  qs('opt_soonest').textContent = t('soonest', 'Soonest');
+  qs('opt_shortest').textContent = t('shortest', 'Shortest');
+  qs('opt_best').textContent = t('best_score', 'Best score');
+  qs('opt_depart').textContent = t('departure', 'Departure');
+  qs('opt_price').textContent = t('price', 'Price');
+  qs('opt_dur').textContent = t('duration', 'Duration');
+  qs('opt_direct').textContent = t('direct', 'Direct');
 }
 
 async function switchLang(lang) {
@@ -444,12 +479,14 @@ async function switchLang(lang) {
   try {
     const res = await fetch(`${API}/translations?lang=${lang}`);
     T = await res.json();
-    qs('titleText').textContent = T.title || 'EMERGENCY FLIGHT FINDER';
+    applyTranslationsToUI();
     loadData(false);
   } catch(e) {}
 }
 
 ['speed','sortBy','maxStops'].forEach(id => qs(id).addEventListener('change', () => loadData(false)));
+qs('passengers').addEventListener('change', () => loadData(false));
+qs('budget').addEventListener('change', () => loadData(false));
 loadData(false);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>

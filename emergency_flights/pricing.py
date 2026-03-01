@@ -1,10 +1,12 @@
-"""Phase 2: Price & seat availability scraping."""
+"""Phase 2: Price & seat availability — Google Flights route-specific scraping + airline scrapers."""
 from __future__ import annotations
 
 import asyncio
 import os
 import re
+from datetime import datetime, timedelta, timezone
 from typing import Optional
+from urllib.parse import quote_plus
 
 import httpx
 from rich.console import Console
@@ -15,16 +17,20 @@ console = Console(stderr=True)
 
 PRICE_API_URL = os.environ.get("PRICE_API_URL", "").strip()
 
-GOOGLE_FLIGHTS_URL = "https://www.google.com/travel/flights"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
 }
 
+AIRPORT_CITY = {
+    "RUH": "Riyadh", "JED": "Jeddah", "DMM": "Dammam",
+    "IST": "Istanbul", "PEK": "Beijing", "PVG": "Shanghai",
+    "CAN": "Guangzhou", "SZX": "Shenzhen", "HKG": "Hong Kong",
+}
+
 
 async def _fetch_price_api(flights: list[FlightLeg]) -> dict[str, dict]:
-    """Optional: POST to PRICE_API_URL; expect JSON { prices: [ { flight_number, price_economy_usd?, price_business_usd?, seats_available? } ] }."""
     if not PRICE_API_URL:
         return {}
     try:
@@ -34,8 +40,7 @@ async def _fetch_price_api(flights: list[FlightLeg]) -> dict[str, dict]:
             if r.status_code != 200:
                 return {}
             data = r.json()
-            prices = data.get("prices") or []
-            return {str(p.get("flight_number", "")).upper(): p for p in prices if p.get("flight_number")}
+            return {str(p.get("flight_number", "")).upper(): p for p in (data.get("prices") or []) if p.get("flight_number")}
     except Exception as e:
         console.print(f"[dim]Price API failed: {e}[/dim]")
         return {}
@@ -46,14 +51,11 @@ async def check_prices_and_seats(
     passengers: int = 1,
     live: bool = True,
 ) -> list[FlightLeg]:
-    """Check live prices and seat availability (optional PRICE_API_URL, then scrapers)."""
     if not live:
-        console.print("[dim]Skipping price checks (offline mode)[/dim]")
         return flights
 
     console.print("[bold]Checking prices & seat availability...[/bold]")
     api_prices = await _fetch_price_api(flights)
-    updated: list[FlightLeg] = []
     for f in flights:
         key = f.flight_number.upper()
         if key in api_prices:
@@ -65,108 +67,121 @@ async def check_prices_and_seats(
             if p.get("seats_available") is not None:
                 f.seats_available = bool(p["seats_available"])
             f.price_source = p.get("source") or "price_api"
-            updated.append(f)
-            continue
-        updated.append(f)
 
-    tasks = [_check_single_flight(f, passengers) for f in updated]
+    tasks = [_check_single_flight(f, passengers) for f in flights]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     out = []
-    for flight, result in zip(updated, results):
+    for flight, result in zip(flights, results):
         if isinstance(result, Exception):
-            console.print(f"  [dim]Price check failed for {flight.flight_number}: {result}[/dim]")
             out.append(flight)
         else:
             out.append(result)
-
     return out
 
 
 async def _check_single_flight(flight: FlightLeg, passengers: int) -> FlightLeg:
-    """Try airline-specific scraper, fall back to Google Flights."""
-    console.print(f"  [dim]Pricing {flight.flight_number} ({flight.airline})...[/dim]")
+    if flight.price_source == "price_api":
+        return flight
+
+    try:
+        result = await _scrape_google_flights_route(flight, passengers)
+        if result.price_source:
+            return result
+    except Exception:
+        pass
 
     scraper = _get_scraper(flight.airline)
     if scraper:
         try:
-            result = await scraper(flight, passengers)
-            if result.price_economy_usd and result.seats_available is not None:
-                return result
+            return await scraper(flight, passengers)
         except Exception:
             pass
-
-    try:
-        return await _scrape_google_flights(flight, passengers)
-    except Exception:
-        pass
 
     return flight
 
 
 def _get_scraper(airline: str):
-    scrapers = {
+    return {
         "Turkish Airlines": _scrape_turkish,
         "Saudia": _scrape_saudia,
         "Cathay Pacific": _scrape_cathay,
         "Air China": _scrape_airchina,
         "China Southern": _scrape_csair,
-    }
-    return scrapers.get(airline)
+    }.get(airline)
 
 
-async def _scrape_google_flights(flight: FlightLeg, passengers: int) -> FlightLeg:
-    """Scrape Google Flights search results for pricing."""
+def _next_date_str(flight: FlightLeg) -> str:
+    """Get next departure date as YYYY-MM-DD for Google Flights URL."""
+    now = datetime.now(timezone.utc)
+    day_map = {"mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6}
+    if "daily" in [d.lower() for d in flight.scheduled_days]:
+        return (now + timedelta(days=1)).strftime("%Y-%m-%d")
+    for offset in range(7):
+        candidate = now + timedelta(days=offset + 1)
+        for d in flight.scheduled_days:
+            if day_map.get(d.lower()[:3]) == candidate.weekday():
+                return candidate.strftime("%Y-%m-%d")
+    return (now + timedelta(days=1)).strftime("%Y-%m-%d")
+
+
+async def _scrape_google_flights_route(flight: FlightLeg, passengers: int) -> FlightLeg:
+    """Scrape Google Flights with a real origin→destination+date query."""
+    origin = AIRPORT_CITY.get(flight.origin, flight.origin)
+    dest = AIRPORT_CITY.get(flight.destination, flight.destination)
+    date = _next_date_str(flight)
+    q = f"Flights from {origin} to {dest} on {date} one way {passengers} passenger"
+    url = f"https://www.google.com/travel/flights?q={quote_plus(q)}&curr=USD"
+
     async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-        resp = await client.get(
-            GOOGLE_FLIGHTS_URL,
-            params={"hl": "en", "gl": "us"},
-            headers=HEADERS,
-        )
-        if resp.status_code == 200:
-            prices = _extract_prices_from_html(resp.text)
-            if prices.get("economy"):
-                flight.price_economy_usd = prices["economy"]
-                flight.price_source = "google_flights"
-            if prices.get("business"):
-                flight.price_business_usd = prices["business"]
+        resp = await client.get(url, headers=HEADERS)
+        if resp.status_code != 200:
+            return flight
+        text = resp.text
+        prices = _extract_prices(text)
+        if prices:
+            flight.price_economy_usd = prices[0]
+            flight.price_source = "google_flights"
+            if len(prices) > 1:
+                flight.price_business_usd = prices[-1]
+        sold_lower = text.lower()
+        if "no flights found" in sold_lower or "no results" in sold_lower:
+            flight.seats_available = False
+        elif prices:
+            flight.seats_available = True
     return flight
 
 
-def _extract_prices_from_html(html: str) -> dict:
-    """Extract price figures from HTML text."""
-    prices: dict = {}
-    matches = re.findall(r'\$[\d,]+', html)
-    if matches:
-        amounts = []
-        for m in matches:
-            try:
-                amounts.append(int(m.replace('$', '').replace(',', '')))
-            except ValueError:
-                continue
-        reasonable = [a for a in amounts if 100 < a < 15000]
-        if reasonable:
-            prices["economy"] = min(reasonable)
-    return prices
+def _extract_prices(html: str) -> list[float]:
+    matches = re.findall(r'(?:USD|US\$|\$)\s?[\d,]+', html)
+    amounts = []
+    for m in matches:
+        try:
+            num = int(re.sub(r'[^\d]', '', m))
+            if 50 < num < 20000:
+                amounts.append(float(num))
+        except ValueError:
+            continue
+    amounts = sorted(set(amounts))
+    return amounts
 
 
 async def _scrape_turkish(flight: FlightLeg, passengers: int) -> FlightLeg:
     url = "https://www.turkishairlines.com/en-sa/flights/"
-    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
         resp = await client.get(url, headers=HEADERS)
         if resp.status_code == 200:
-            text = resp.text.lower()
-            flight.seats_available = "sold out" not in text and "no availability" not in text
-            prices = _extract_prices_from_html(resp.text)
-            if prices.get("economy"):
-                flight.price_economy_usd = prices["economy"]
+            flight.seats_available = "sold out" not in resp.text.lower()
+            prices = _extract_prices(resp.text)
+            if prices:
+                flight.price_economy_usd = prices[0]
                 flight.price_source = "turkish_airlines"
     return flight
 
 
 async def _scrape_saudia(flight: FlightLeg, passengers: int) -> FlightLeg:
     url = "https://www.saudia.com/en/booking"
-    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
         resp = await client.get(url, headers=HEADERS)
         if resp.status_code == 200:
             flight.seats_available = "sold out" not in resp.text.lower()
@@ -175,9 +190,8 @@ async def _scrape_saudia(flight: FlightLeg, passengers: int) -> FlightLeg:
 
 
 async def _scrape_cathay(flight: FlightLeg, passengers: int) -> FlightLeg:
-    url = "https://www.cathaypacific.com/cx/en_US.html"
-    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-        resp = await client.get(url, headers=HEADERS)
+    async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+        resp = await client.get("https://www.cathaypacific.com/cx/en_US.html", headers=HEADERS)
         if resp.status_code == 200:
             flight.seats_available = True
             flight.price_source = "cathay_pacific"
@@ -185,9 +199,8 @@ async def _scrape_cathay(flight: FlightLeg, passengers: int) -> FlightLeg:
 
 
 async def _scrape_airchina(flight: FlightLeg, passengers: int) -> FlightLeg:
-    url = "https://www.airchina.com/en/"
-    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-        resp = await client.get(url, headers=HEADERS)
+    async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+        resp = await client.get("https://www.airchina.com/en/", headers=HEADERS)
         if resp.status_code == 200:
             flight.seats_available = True
             flight.price_source = "air_china"
@@ -195,9 +208,8 @@ async def _scrape_airchina(flight: FlightLeg, passengers: int) -> FlightLeg:
 
 
 async def _scrape_csair(flight: FlightLeg, passengers: int) -> FlightLeg:
-    url = "https://www.csair.com/en/"
-    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-        resp = await client.get(url, headers=HEADERS)
+    async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+        resp = await client.get("https://www.csair.com/en/", headers=HEADERS)
         if resp.status_code == 200:
             flight.seats_available = True
             flight.price_source = "china_southern"
@@ -207,17 +219,14 @@ async def _scrape_csair(flight: FlightLeg, passengers: int) -> FlightLeg:
 def filter_by_budget(
     flights: list[FlightLeg], budget_usd: float, passengers: int = 1,
 ) -> list[FlightLeg]:
-    """Tag flights that exceed the per-person budget."""
     for f in flights:
-        if f.price_economy_usd and (f.price_economy_usd * passengers) > budget_usd:
-            f.over_budget = True
+        f.over_budget = bool(f.price_economy_usd and (f.price_economy_usd * passengers) > budget_usd)
     return flights
 
 
 def check_multi_passenger_availability(
     flights: list[FlightLeg], passengers: int,
 ) -> list[FlightLeg]:
-    """Flag flights where seat count may be insufficient for the group."""
     for f in flights:
         if passengers > 1 and f.seats_available is False:
             f.seats_sufficient = False

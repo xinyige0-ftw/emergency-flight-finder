@@ -308,6 +308,15 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
     if route.next_departure:
         wait = max(0, (route.next_departure - now).total_seconds() / 3600)
 
+    any_over_budget = any(leg.over_budget for leg in route.flight_legs)
+    seats_statuses = [leg.seats_available for leg in route.flight_legs]
+    if all(s is True for s in seats_statuses) and seats_statuses:
+        seats_status = "ok"
+    elif any(s is False for s in seats_statuses):
+        seats_status = "sold_out"
+    else:
+        seats_status = "unknown"
+
     return {
         "name": route.name,
         "depart_ast": route.depart_ast,
@@ -322,6 +331,8 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
         "risk": route.conflict_proximity.value,
         "price_economy": route.price_economy_usd,
         "price_business": route.price_business_usd,
+        "over_budget": any_over_budget,
+        "seats_status": seats_status,
         "changed": route.changed,
         "notes": route.notes,
         "booking_urls": route.booking_urls,
@@ -339,6 +350,8 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
                 "aircraft": leg.aircraft,
                 "seats_available": leg.seats_available,
                 "over_budget": leg.over_budget,
+                "price_economy": leg.price_economy_usd,
+                "price_business": leg.price_business_usd,
                 "price_source": leg.price_source,
             }
             for leg in route.flight_legs
