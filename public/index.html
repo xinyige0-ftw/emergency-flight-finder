@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#e94560">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.json">
+<title>Emergency Flight Finder</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#1a1a2e;color:#eee;font-size:15px;padding-bottom:80px}
+.top{background:#e94560;padding:16px;text-align:center}
+.top h1{font-size:18px;font-weight:700}
+.top .sub{font-size:12px;opacity:.8;margin-top:4px}
+.bar{display:flex;gap:6px;padding:8px 12px;background:#16213e;overflow-x:auto;white-space:nowrap;position:sticky;top:0;z-index:10}
+.bar select,.bar button{background:#0f3460;color:#fff;border:1px solid #333;border-radius:6px;padding:6px 10px;font-size:13px}
+.bar button{background:#e94560;border:none;font-weight:600}
+.bar button.on{background:#2ecc71}
+.section{padding:12px}
+.section h2{font-size:14px;color:#e94560;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.airspace{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.tag{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tag.closed{background:#c0392b}.tag.open{background:#27ae60}.tag.restricted{background:#f39c12;color:#000}
+.card{background:#16213e;border-radius:10px;margin-bottom:12px;overflow:hidden;border-left:4px solid #f39c12}
+.card.high{border-color:#27ae60}.card.low{border-color:#c0392b}.card.changed{animation:pulse .5s 3}
+@keyframes pulse{0%,100%{border-color:#e94560}50%{border-color:#fff}}
+.card-head{display:flex;justify-content:space-between;align-items:center;padding:12px;cursor:pointer}
+.card-head .rank{font-size:22px;font-weight:700;color:#e94560;margin-right:10px}
+.card-head .name{flex:1;font-size:14px;font-weight:600}
+.card-head .meta{text-align:right;font-size:12px}
+.card-head .time{font-size:16px;font-weight:700}
+.card-head .price{color:#2ecc71;font-size:13px}
+.badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;margin-left:4px}
+.badge.low-risk{background:#27ae60}.badge.med-risk{background:#f39c12;color:#000}.badge.high-risk{background:#c0392b}
+.badge.changed-badge{background:#e94560;animation:pulse .5s 3}
+.card-body{padding:0 12px 12px;display:none;font-size:13px;line-height:1.6}
+.card-body.open{display:block}
+.card-body .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1a2e}
+.card-body .label{color:#888}
+.leg{background:#0f3460;padding:8px;border-radius:6px;margin:6px 0}
+.leg .fn{font-weight:700;font-size:14px}
+.status{display:inline-block;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600}
+.status.operating{background:#27ae60}.status.scheduled{background:#2980b9}.status.cancelled{background:#c0392b}
+.status.unknown{background:#7f8c8d}.status.delayed{background:#f39c12;color:#000}
+.actions{display:flex;gap:8px;margin-top:10px}
+.actions a{flex:1;text-align:center;padding:14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;min-height:48px;display:flex;align-items:center;justify-content:center}
+.actions .book{background:#2ecc71;color:#000}
+.actions .call{background:#3498db;color:#fff}
+.ground{background:#0f3460;padding:8px;border-radius:6px;margin:6px 0;font-size:12px;color:#aaa}
+.refresh-bar{position:fixed;bottom:0;left:0;right:0;background:#16213e;border-top:1px solid #333;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;z-index:20}
+.refresh-bar .timer{font-size:12px;color:#888}
+.refresh-bar button{background:#e94560;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:700;font-size:13px}
+.loading{text-align:center;padding:40px;color:#888}
+.steps{padding:12px}
+.steps li{margin-bottom:6px;padding-left:4px}
+.warn{background:#f39c12;color:#000;padding:10px 12px;font-size:12px;text-align:center;font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>EMERGENCY FLIGHT FINDER</h1>
+  <div class="sub" id="updated">Loading...</div>
+</div>
+
+<div class="bar">
+  <select id="speed" title="Speed priority">
+    <option value="balanced">Balanced</option>
+    <option value="soonest">Soonest</option>
+    <option value="shortest_total">Shortest</option>
+  </select>
+  <select id="sortBy" title="Sort by">
+    <option value="score">Best score</option>
+    <option value="depart">Departure</option>
+    <option value="price">Price</option>
+    <option value="duration">Duration</option>
+  </select>
+  <select id="maxStops" title="Max stops">
+    <option value="2">2 stops</option>
+    <option value="1">1 stop</option>
+    <option value="0">Direct</option>
+  </select>
+  <button id="refreshBtn" onclick="loadData(true)">Refresh</button>
+  <button id="autoBtn" onclick="toggleAuto()">Auto: OFF</button>
+</div>
+
+<div id="airspaceSection" class="section"></div>
+<div id="escapeSection" class="section" style="display:none"></div>
+<div id="routesContainer"><div class="loading">Loading routes...</div></div>
+
+<div class="steps section" id="stepsSection" style="display:none">
+  <h2>Action Plan</h2>
+  <ol id="stepsList"></ol>
+</div>
+
+<div class="warn">Flight data changes rapidly during conflict. Always confirm with the airline before traveling.</div>
+
+<div class="refresh-bar">
+  <span class="timer" id="timer">—</span>
+  <button onclick="loadData(true)">Refresh Now</button>
+</div>
+
+<script>
+const API = '/api/routes';
+let autoRefresh = false;
+let autoInterval = null;
+let countdown = 0;
+let countdownTimer = null;
+
+function qs(id) { return document.getElementById(id); }
+
+async function loadData(live) {
+  const speed = qs('speed').value;
+  const sort = qs('sortBy').value;
+  const stops = qs('maxStops').value;
+  const url = `${API}?speed=${speed}&sort_by=${sort}&max_stops=${stops}&live=${!!live}`;
+
+  qs('timer').textContent = 'Loading...';
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    render(data);
+    if (autoRefresh) startCountdown(120);
+  } catch (e) {
+    qs('timer').textContent = 'OFFLINE — using cached data';
+  }
+}
+
+function render(data) {
+  qs('updated').textContent = data.updated_ast + '  |  ' + data.scenario;
+
+  // Airspace
+  let airHtml = '<div class="section"><h2>Airspace</h2><div class="airspace">';
+  data.airspace.closed.forEach(c => airHtml += `<span class="tag closed">${c}</span>`);
+  data.airspace.restricted.forEach(c => airHtml += `<span class="tag restricted">${c}</span>`);
+  data.airspace.open.forEach(c => airHtml += `<span class="tag open">${c}</span>`);
+  airHtml += '</div></div>';
+  qs('airspaceSection').innerHTML = airHtml;
+
+  // Escape routes
+  if (data.escape_routes && data.escape_routes.length) {
+    let escHtml = '<h2>Ground Escape</h2>';
+    data.escape_routes.forEach(e => {
+      const st = e.status === 'likely_open' ? 'open' : e.status === 'closed' ? 'closed' : 'restricted';
+      escHtml += `<span class="tag ${st}" style="margin:2px">${e.from} → ${e.to} (${e.hours}h) ${e.via}</span> `;
+    });
+    qs('escapeSection').innerHTML = escHtml;
+    qs('escapeSection').style.display = 'block';
+  }
+
+  // Routes
+  let html = '';
+  data.routes.forEach((r, i) => {
+    const rank = i + 1;
+    const rel = r.reliability === 'high' ? 'high' : r.reliability === 'low' ? 'low' : '';
+    const changed = r.changed ? 'changed' : '';
+    const riskBadge = r.risk === 'low' ? '<span class="badge low-risk">LOW</span>'
+      : r.risk === 'high' ? '<span class="badge high-risk">HIGH</span>'
+      : '<span class="badge med-risk">MED</span>';
+    const changedBadge = r.changed ? '<span class="badge changed-badge">CHANGED</span>' : '';
+    const price = r.price_economy ? `$${r.price_economy.toLocaleString()}` : '—';
+    const totalH = Math.round(r.total_hours);
+
+    html += `<div class="card ${rel} ${changed}" onclick="toggle(this)">
+      <div class="card-head">
+        <span class="rank">#${rank}</span>
+        <div class="name">${r.name} ${riskBadge} ${changedBadge}</div>
+        <div class="meta">
+          <div class="time">${totalH}h</div>
+          <div class="price">${price}</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row"><span class="label">Departs</span><span>${r.depart_ast || '—'}</span></div>
+        <div class="row"><span class="label">Arrives</span><span>${r.arrive_cst || '—'}</span></div>
+        <div class="row"><span class="label">Wait</span><span>${r.wait_hours}h</span></div>
+        <div class="row"><span class="label">Ground</span><span>${r.ground_hours}h</span></div>
+        <div class="row"><span class="label">Flight</span><span>${r.flight_hours}h</span></div>
+        <div class="row"><span class="label">Stops</span><span>${r.num_stops}</span></div>
+        <div class="row"><span class="label">Economy</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
+        <div class="row"><span class="label">Business</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
+        ${r.ground.map(g => `<div class="ground">${g.from} → ${g.to} via ${g.via} (~${g.hours}h)</div>`).join('')}
+        ${r.legs.map(l => `<div class="leg">
+          <span class="fn">${l.flight}</span> ${l.airline}
+          <span class="status ${l.status}">${l.status.toUpperCase()}</span><br>
+          ${l.from} → ${l.to} &nbsp; ${l.duration}h &nbsp; ${l.aircraft}
+        </div>`).join('')}
+        <div class="row"><span class="label">Score</span><span>${r.score} (lower = better)</span></div>
+        <div class="actions">
+          ${r.booking_urls.map(u => `<a class="book" href="${u}" target="_blank" rel="noopener">BOOK NOW</a>`).join('')}
+          ${r.contacts.map(c => `<a class="call" href="tel:${c.replace(/[^+0-9]/g,'')}">CALL ${c}</a>`).join('')}
+        </div>
+        ${r.notes ? `<div style="color:#888;margin-top:8px;font-size:12px">${r.notes}</div>` : ''}
+      </div>
+    </div>`;
+  });
+  qs('routesContainer').innerHTML = html;
+
+  // Steps
+  qs('stepsSection').style.display = 'block';
+  qs('stepsList').innerHTML = `
+    <li>Cross to Saudi via King Fahd Causeway</li>
+    <li>Fly Dammam → Riyadh (~1h15m) or drive (~4h)</li>
+    <li>Call airline to confirm flight is operating</li>
+    <li>Book fastest CONFIRMED option</li>
+    <li>Backup: Turkish Airlines via Istanbul (daily)</li>
+    <li>Passport + cash (SAR & USD) + phone charger</li>`;
+
+  if (data.routes.some(r => r.changed)) {
+    try { navigator.vibrate?.(200); } catch(e) {}
+  }
+}
+
+function toggle(card) {
+  const body = card.querySelector('.card-body');
+  body.classList.toggle('open');
+}
+
+function toggleAuto() {
+  autoRefresh = !autoRefresh;
+  qs('autoBtn').textContent = autoRefresh ? 'Auto: ON' : 'Auto: OFF';
+  qs('autoBtn').classList.toggle('on', autoRefresh);
+  if (autoRefresh) {
+    loadData(false);
+  } else {
+    clearInterval(countdownTimer);
+    qs('timer').textContent = 'Auto-refresh off';
+  }
+}
+
+function startCountdown(seconds) {
+  clearInterval(countdownTimer);
+  countdown = seconds;
+  countdownTimer = setInterval(() => {
+    countdown--;
+    const m = Math.floor(countdown / 60);
+    const s = countdown % 60;
+    qs('timer').textContent = `Next refresh: ${m}m ${s.toString().padStart(2,'0')}s`;
+    if (countdown <= 0) {
+      clearInterval(countdownTimer);
+      loadData(false);
+    }
+  }, 1000);
+}
+
+// Change selects trigger reload
+['speed','sortBy','maxStops'].forEach(id => {
+  qs(id).addEventListener('change', () => loadData(false));
+});
+
+// Initial load
+loadData(false);
+
+// Register service worker for offline
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
