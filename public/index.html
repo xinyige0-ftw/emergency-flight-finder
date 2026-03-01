@@ -294,7 +294,8 @@ function render(data) {
         <div class="row"><span class="label">${t('stops','Stops')}</span><span>${r.num_stops}</span></div>
         <div class="row"><span class="label">${t('economy','Economy')}</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
         <div class="row"><span class="label">${t('business','Business')}</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
-        <div class="row"><span class="label">${t('score','Score')}</span><span>${r.score} (${t('lower_better','lower = better')})</span></div>
+        <div class="row" title="${t('score_tip','Score = wait×1.5 + ground + flight + layover×0.8 + conflict penalty. Lower = faster escape.')}"><span class="label">${t('score','Score')}</span><span>${r.score} (${t('lower_better','lower = faster escape')})</span></div>
+        <div class="row" style="color:#666;font-size:9px"><span></span><span>${t('score_tip','wait×1.5 + ground + flight + layover×0.8 + conflict penalty')}</span></div>
         ${r.ground.map(g => `<div class="ground">${g.from} → ${g.to} via ${g.via} (~${g.hours}h)</div>`).join('')}
         ${r.legs.map(l => {
           let lb = '';

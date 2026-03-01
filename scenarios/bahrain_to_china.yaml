@@ -91,11 +91,17 @@ operational_airports:
     notes: "Saudia SV882 direct to Guangzhou. Far from conflict zone."
 
 safe_hubs:
+  - code: "RUH"
+    name: "King Khalid International"
+    city: "Riyadh"
+    country: "Saudi Arabia"
+    notes: "Main Saudi hub. Direct flights to China. Domestic connections from Dammam."
+
   - code: "IST"
     name: "Istanbul Airport"
     city: "Istanbul"
     country: "Turkey"
-    notes: "Turkish airspace fully open. Daily TK flights from Riyadh. Connections to all Chinese cities."
+    notes: "Turkish airspace fully open. Daily TK flights from Riyadh & Dammam. Connections to all Chinese cities."
 
   - code: "LHR"
     name: "Heathrow"
@@ -130,6 +136,98 @@ airspace_status:
     - "Oman"
 
 known_flights:
+  # === DOMESTIC: Dammam to Riyadh (critical first leg) ===
+  - flight_number: "SV1079"
+    airline: "Saudia"
+    origin: "DMM"
+    destination: "RUH"
+    days: ["daily"]
+    depart_utc: "03:00"
+    arrive_utc: "04:15"
+    duration_hours: 1.25
+    aircraft: "A320"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 80
+    price_business_usd: 250
+    conflict_proximity: "low"
+
+  - flight_number: "SV1081"
+    airline: "Saudia"
+    origin: "DMM"
+    destination: "RUH"
+    days: ["daily"]
+    depart_utc: "07:00"
+    arrive_utc: "08:15"
+    duration_hours: 1.25
+    aircraft: "A320"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 80
+    price_business_usd: 250
+    conflict_proximity: "low"
+
+  - flight_number: "SV1085"
+    airline: "Saudia"
+    origin: "DMM"
+    destination: "RUH"
+    days: ["daily"]
+    depart_utc: "14:00"
+    arrive_utc: "15:15"
+    duration_hours: 1.25
+    aircraft: "A320"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 80
+    price_business_usd: 250
+    conflict_proximity: "low"
+
+  - flight_number: "XY402"
+    airline: "Flynas"
+    origin: "DMM"
+    destination: "RUH"
+    days: ["daily"]
+    depart_utc: "05:30"
+    arrive_utc: "06:45"
+    duration_hours: 1.25
+    aircraft: "A320neo"
+    contact: "+966 9200 11111"
+    booking_url: "https://www.flynas.com/"
+    price_economy_usd: 55
+    price_business_usd: 180
+    conflict_proximity: "low"
+
+  - flight_number: "XY412"
+    airline: "Flynas"
+    origin: "DMM"
+    destination: "RUH"
+    days: ["daily"]
+    depart_utc: "16:00"
+    arrive_utc: "17:15"
+    duration_hours: 1.25
+    aircraft: "A320neo"
+    contact: "+966 9200 11111"
+    booking_url: "https://www.flynas.com/"
+    price_economy_usd: 55
+    price_business_usd: 180
+    conflict_proximity: "low"
+
+  # === DAMMAM DIRECT INTERNATIONAL ===
+  - flight_number: "TK157"
+    airline: "Turkish Airlines"
+    origin: "DMM"
+    destination: "IST"
+    days: ["daily"]
+    depart_utc: "04:10"
+    arrive_utc: "08:30"
+    duration_hours: 4.3
+    aircraft: "A321"
+    contact: "+966 13 887 2100"
+    booking_url: "https://www.turkishairlines.com/en-sa/"
+    price_economy_usd: 320
+    price_business_usd: 1100
+    conflict_proximity: "low"
+
   # === DIRECT: Riyadh to China ===
   - flight_number: "CZ5008"
     airline: "China Southern"
