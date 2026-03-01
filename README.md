@@ -4,6 +4,19 @@ Find the fastest way out of a conflict zone by air.
 
 This tool was built during an active regional conflict to help people evacuate when normal flight booking tools are useless — airports closed, airspace shut, airlines cancelling without notice.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/xinyige0-ftw/emergency-flight-finder)
+
+## Web UI (Mobile-First)
+
+Access from any phone or browser — no install needed.
+
+```bash
+# Run locally
+evac serve
+
+# Or deploy to the cloud (see Deploy to Render button above)
+```
+
 ## What it does
 
 1. **Reads a scenario file** describing your situation: where you are, where you need to go, which airspaces are closed, which airports are reachable, and what flights normally operate
