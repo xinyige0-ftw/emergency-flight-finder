@@ -244,6 +244,7 @@ function render(data) {
   const routesByOrigin = {};
   let cOk = 0, cCancel = 0, cDelay = 0, cTotal = 0;
   const countedFlights = new Set();
+  const flightsPerOrigin = {};
 
   data.routes.forEach(r => {
     if (!r.legs || !r.legs.length) return;
@@ -256,6 +257,8 @@ function render(data) {
       if (['operating','landed','scheduled','unknown'].includes(firstLeg.status)) cOk++;
       else if (firstLeg.status === 'cancelled') cCancel++;
       else if (firstLeg.status === 'delayed') cDelay++;
+      if (!flightsPerOrigin[originCode]) flightsPerOrigin[originCode] = 0;
+      flightsPerOrigin[originCode]++;
     }
 
     if (!routesByOrigin[originCode]) routesByOrigin[originCode] = [];
@@ -276,13 +279,14 @@ function render(data) {
 
   let tabsHtml = '';
   allOrigins.forEach(code => {
-    const count = (routesByOrigin[code] || []).length;
+    const uniqueCount = flightsPerOrigin[code] || 0;
+    const routeCount = (routesByOrigin[code] || []).length;
     const city = AIRPORT_NAMES[code] || code;
     const isActive = code === activeTab ? 'active' : '';
     tabsHtml += `<div class="airport-tab ${isActive}" onclick="switchTab('${code}')">
       <span class="tab-code">${code}</span>
       <span class="tab-city">${city}</span>
-      <span class="tab-count">${count}个航班</span>
+      <span class="tab-count">${uniqueCount}个航班 · ${routeCount}条线路</span>
     </div>`;
   });
   qs('airportTabs').innerHTML = tabsHtml;
