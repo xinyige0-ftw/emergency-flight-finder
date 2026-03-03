@@ -83,51 +83,64 @@ TRANSIT_VISA_RULES = {
 
 
 _SEED_STATUS = {
-    # Feb 28 = Sat | Mar 1 = Sun | Mar 2 = Mon
-    # Only entries for days a flight actually operates (checked against scenario days).
-    # Direct China flights
-    "CZ5008":  {"2026-02-28": "cancelled",                                       "2026-03-02": "operating"},  # Tue/Thu/Sat → Sat✓, Mon✗→skip, but next Tue
-    "SV884":   {"2026-02-28": "cancelled"},                                                                    # Tue/Thu/Sat
-    "CX644":   {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # daily
-    "CA790":   {                             "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # Mon/Wed/Fri/Sun
-    "SV888":   {                             "2026-03-01": "cancelled"},                                        # Sun/Wed
-    "SV882":   {                                                                  "2026-03-02": "operating"},   # Mon/Wed/Fri
-    "SV886":   {                                                                  "2026-03-02": "cancelled"},   # Mon/Fri
-    # Turkish (daily)
-    "TK145":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
-    "TK157":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
-    "TK170":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
-    "TK88":    {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
-    "TK26":    {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
-    "TK72":    {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
-    "TK54":    {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
-    # Oman Air
-    "WY667":   {"2026-02-28": "delayed",    "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
-    "WY669":   {                             "2026-03-01": "delayed",             "2026-03-02": "operating"},   # Mon/Wed/Fri/Sun
-    "WY841":   {"2026-02-28": "delayed",    "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
-    "WY843":   {"2026-02-28": "cancelled",  "2026-03-01": "delayed",             "2026-03-02": "operating"},   # daily
-    "WY851":   {"2026-02-28": "cancelled",                                       },                            # Tue/Thu/Sat
-    # SE Asia connections
-    "CZ3036":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # daily
-    "TG668":   {"2026-02-28": "cancelled",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
-    "TG614":   {"2026-02-28": "cancelled",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
-    "SQ802":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
-    "SQ830":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
-    "MH376":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
-    "MH388":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
-    "SV846":   {                                                                  "2026-03-02": "operating"},   # Mon/Wed/Fri
-    "SV848":   {"2026-02-28": "cancelled"},                                                                    # Tue/Thu/Sat
-    "SV850":   {"2026-02-28": "cancelled",                                       "2026-03-02": "cancelled"},   # Mon/Wed/Sat
-    # India
-    "AI902":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
-    "AI314":   {                             "2026-03-01": "operating",           "2026-03-02": "operating"},   # Mon/Wed/Fri/Sun
-    "AI348":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
-    # Domestic/other
-    "SV1079":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "operating"},   # daily
-    "SV1085":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # daily
-    "XY402":   {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # daily
-    "SV1055":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "operating"},   # daily
-    "SV1521":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # daily
+    # Feb 28=Sat | Mar 1=Sun | Mar 2=Mon | Mar 3=Tue
+    # Verified against flightera.net where available. Only on actual operating days.
+    #
+    # ── Direct China flights ──
+    # CZ5008 Tue/Thu/Sat — flightera: Feb 28 "Unknown", Mar 3 cancelled (user-confirmed)
+    "CZ5008":  {"2026-02-28": "unknown",                                                                       "2026-03-03": "cancelled"},
+    # SV884 Tue/Thu/Sat — flightera (CZ7893): Feb 28 Landed 7h late, Mar 3 Cancelled
+    "SV884":   {"2026-02-28": "delayed",                                                                        "2026-03-03": "cancelled"},
+    # CX644 daily
+    "CX644":   {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},
+    # CA790 Mon/Wed/Fri/Sun
+    "CA790":   {                             "2026-03-01": "cancelled",  "2026-03-02": "cancelled"},                                          # Mon/Wed/Fri/Sun → Mar 3=Tue ✗
+    # SV888 Sun/Wed
+    "SV888":   {                             "2026-03-01": "cancelled"},
+    # SV882 Mon/Wed/Fri — flightera: Mar 2 Landed on time, Mar 4 (Wed) Planned
+    "SV882":   {                                                         "2026-03-02": "operating"},
+    # SV886 Mon/Fri
+    "SV886":   {                                                         "2026-03-02": "cancelled"},
+    #
+    # ── Turkish (daily, confirmed operating throughout) ──
+    "TK145":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
+    "TK157":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
+    "TK170":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
+    "TK88":    {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
+    "TK26":    {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
+    "TK72":    {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
+    "TK54":    {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
+    #
+    # ── Oman Air ──
+    "WY667":   {"2026-02-28": "delayed",    "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "WY669":   {                             "2026-03-01": "delayed",    "2026-03-02": "operating"},                                          # Mon/Wed/Fri/Sun
+    "WY841":   {"2026-02-28": "delayed",    "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "WY843":   {"2026-02-28": "cancelled",  "2026-03-01": "delayed",    "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "WY851":   {"2026-02-28": "cancelled",                                                                      "2026-03-03": "cancelled"},  # Tue/Thu/Sat
+    #
+    # ── SE Asia connections ──
+    "CZ3036":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},   # daily
+    "TG668":   {"2026-02-28": "cancelled",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "TG614":   {"2026-02-28": "cancelled",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "SQ802":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "SQ830":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "MH376":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "MH388":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "SV846":   {                                                         "2026-03-02": "operating"},                                          # Mon/Wed/Fri
+    "SV848":   {"2026-02-28": "cancelled",                                                                      "2026-03-03": "cancelled"},  # Tue/Thu/Sat
+    "SV850":   {"2026-02-28": "cancelled",                               "2026-03-02": "cancelled"},                                          # Mon/Wed/Sat
+    #
+    # ── India ──
+    "AI902":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "AI314":   {                             "2026-03-01": "operating",  "2026-03-02": "operating"},                                          # Mon/Wed/Fri/Sun → Mar 3=Tue ✗
+    "AI348":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    #
+    # ── Domestic/other ──
+    "SV1079":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "SV1085":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},   # daily
+    "XY402":   {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},   # daily
+    "SV1055":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "SV1521":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},   # daily
 }
 
 
