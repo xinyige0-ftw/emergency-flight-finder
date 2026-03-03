@@ -89,8 +89,8 @@ _SEED_STATUS = {
     # ── Direct China flights ──
     # CZ5008 Tue/Thu/Sat — flightera: Feb 28 "Unknown", Mar 3 cancelled (user-confirmed)
     "CZ5008":  {"2026-02-28": "unknown",                                                                       "2026-03-03": "cancelled"},
-    # SV884 Tue/Thu/Sat — flightera (CZ7893): Feb 28 Landed 7h late, Mar 3 Cancelled
-    "SV884":   {"2026-02-28": "delayed",                                                                        "2026-03-03": "cancelled"},
+    # SV884 Tue/Thu/Sat — flightera (CZ7893): Feb 28 was arrival of Feb 27 dep, not a Feb 28 service. Mar 3 Cancelled.
+    "SV884":   {                                                                                                 "2026-03-03": "cancelled"},
     # CX644 daily
     "CX644":   {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},
     # CA790 Mon/Wed/Fri/Sun
