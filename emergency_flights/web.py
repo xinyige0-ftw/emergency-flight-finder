@@ -26,7 +26,7 @@ from .models import AST, CST, Route
 from .predictions import (
     analyze_patterns, check_all_transit_visas, get_historical_context,
     record_status_snapshot, wait_vs_go_recommendation,
-    get_all_flight_histories, get_daily_summary,
+    get_all_flight_histories, get_daily_summary, seed_initial_history,
 )
 from .pricing import check_prices_and_seats, filter_by_budget, check_multi_passenger_availability
 from .routes import build_routes
@@ -36,6 +36,13 @@ app = FastAPI(title="沙特回国航班监控")
 
 SCENARIOS_DIR = Path(__file__).parent.parent / "scenarios"
 STATIC_DIR = Path(__file__).parent.parent / "static"
+
+WHATSAPP_CONTENT_SID = os.environ.get("WHATSAPP_CONTENT_SID", "HX245a5624880424408683e063780a448f")
+
+
+@app.on_event("startup")
+def _on_startup():
+    seed_initial_history()
 
 _previous_routes: list[Route] = []
 
@@ -264,7 +271,7 @@ async def api_test_alert(request: Request):
     if channel == "whatsapp" and not config.twilio_whatsapp_from:
         return JSONResponse({"ok": False, "error": "WhatsApp发送号未配置。"}, status_code=500)
 
-    msg = "【沙特回国航班监控】测试消息：当航班状态变化（取消、延误、恢复运营）或价格变动时，您将收到实时通知。"
+    msg = "【沙特回国航班监控】测试消息\n\n当航班状态变化（取消、延误、恢复运营）或价格变动时，您将收到实时通知。"
 
     try:
         if channel == "whatsapp":

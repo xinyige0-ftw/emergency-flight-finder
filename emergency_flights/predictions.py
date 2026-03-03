@@ -82,6 +82,75 @@ TRANSIT_VISA_RULES = {
 }
 
 
+_SEED_HISTORY = {
+    "2026-02-28": {
+        "CZ5008": "cancelled", "SV884": "cancelled", "CX644": "cancelled",
+        "CA790": "cancelled", "SV882": "cancelled",
+        "TK145": "operating", "TK157": "operating", "TK170": "operating",
+        "TK88": "operating", "TK26": "operating", "TK72": "operating", "TK54": "operating",
+        "WY667": "delayed", "WY669": "delayed", "WY841": "delayed",
+        "WY843": "cancelled", "WY851": "cancelled",
+        "CZ3036": "cancelled", "TG668": "cancelled", "TG614": "cancelled",
+        "SQ802": "operating", "SQ830": "operating",
+        "MH376": "operating", "MH388": "operating",
+        "SV846": "cancelled", "SV848": "cancelled", "SV850": "cancelled",
+        "AI902": "operating", "AI314": "operating", "AI348": "operating",
+        "SV1079": "cancelled", "SV1085": "cancelled",
+        "XY402": "cancelled", "SV1055": "cancelled", "SV1521": "cancelled",
+    },
+    "2026-03-01": {
+        "CZ5008": "cancelled", "SV884": "operating", "CX644": "cancelled",
+        "CA790": "cancelled", "SV882": "operating",
+        "TK145": "operating", "TK157": "operating", "TK170": "operating",
+        "TK88": "operating", "TK26": "operating", "TK72": "operating", "TK54": "operating",
+        "WY667": "operating", "WY669": "operating", "WY841": "operating",
+        "WY843": "delayed", "WY851": "cancelled",
+        "CZ3036": "cancelled", "TG668": "operating", "TG614": "operating",
+        "SQ802": "operating", "SQ830": "operating",
+        "MH376": "operating", "MH388": "operating",
+        "SV846": "operating", "SV848": "cancelled", "SV850": "cancelled",
+        "AI902": "operating", "AI314": "operating", "AI348": "operating",
+        "SV1079": "cancelled", "SV1085": "cancelled",
+        "XY402": "cancelled", "SV1055": "cancelled", "SV1521": "cancelled",
+    },
+    "2026-03-02": {
+        "CZ5008": "operating", "SV884": "operating", "CX644": "cancelled",
+        "CA790": "cancelled", "SV882": "operating",
+        "TK145": "operating", "TK157": "operating", "TK170": "operating",
+        "TK88": "operating", "TK26": "operating", "TK72": "operating", "TK54": "operating",
+        "WY667": "operating", "WY669": "operating", "WY841": "operating",
+        "WY843": "operating", "WY851": "delayed",
+        "CZ3036": "cancelled", "TG668": "operating", "TG614": "operating",
+        "SQ802": "operating", "SQ830": "operating",
+        "MH376": "operating", "MH388": "operating",
+        "SV846": "operating", "SV848": "operating", "SV850": "cancelled",
+        "AI902": "operating", "AI314": "operating", "AI348": "operating",
+        "SV1079": "operating", "SV1085": "cancelled",
+        "XY402": "cancelled", "SV1055": "operating", "SV1521": "cancelled",
+    },
+}
+
+
+def seed_initial_history():
+    """Pre-populate history for Feb 28 - Mar 2 if not already present."""
+    history = _load_history()
+    flights = history.setdefault("flights", {})
+    seeded = False
+
+    for date_key, statuses in _SEED_HISTORY.items():
+        for flight_number, status in statuses.items():
+            flight_data = flights.setdefault(flight_number, {})
+            if date_key not in flight_data:
+                flight_data[date_key] = {
+                    "status": status,
+                    "checked_at": f"{date_key}T12:00:00+00:00",
+                }
+                seeded = True
+
+    if seeded:
+        _save_history(history)
+
+
 def record_flight_status(flight_number: str, status: str, check_date: Optional[date] = None):
     """Record a single flight's status for a given date."""
     if check_date is None:

@@ -40,11 +40,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
 .tag.open{background:#e6f4ea;color:#137333}
 .tag.restricted{background:#fef7e0;color:#7c5800}
 
-.airport-group{margin-top:10px}
-.airport-header{padding:10px 16px;background:#fff;border-bottom:1px solid #e8e8e8;display:flex;align-items:center;gap:8px}
-.airport-header .code{font-size:18px;font-weight:800;color:#1a73e8}
-.airport-header .name{font-size:13px;color:#555}
-.airport-header .count{margin-left:auto;font-size:11px;color:#888;background:#f0f0f0;padding:2px 8px;border-radius:10px}
+.airport-tabs{display:flex;background:#fff;border-bottom:2px solid #e8e8e8;position:sticky;top:0;z-index:50}
+.airport-tab{flex:1;text-align:center;padding:12px 8px;cursor:pointer;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;transition:all .2s;user-select:none}
+.airport-tab.active{color:#1a73e8;border-bottom-color:#1a73e8;background:#f0f6ff}
+.airport-tab .tab-code{font-size:16px;font-weight:800;display:block;line-height:1.3}
+.airport-tab .tab-city{font-size:10px;font-weight:500;display:block}
+.airport-tab .tab-count{font-size:10px;color:#aaa;display:block;margin-top:1px}
+.airport-tab.active .tab-count{color:#1a73e8}
+
+.filter-bar{background:#fff;border-bottom:1px solid #e8e8e8;padding:8px 12px;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-bar select{background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;padding:7px 10px;font-size:12px;min-height:36px;cursor:pointer}
+.filter-bar button{border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;min-height:36px;cursor:pointer;flex-shrink:0}
+.btn-live{background:#1a73e8;color:#fff}
+.btn-auto{background:#f0f0f0;color:#555;border:1px solid #ddd}
+.btn-auto.on{background:#e6f4ea;color:#0d9b4a;border-color:#0d9b4a}
 
 .flight-card{background:#fff;margin:6px 10px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;border:1px solid #e8e8e8}
 .flight-card.changed{border-color:#d93025;box-shadow:0 0 0 2px rgba(217,48,37,.15)}
@@ -103,24 +113,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
 .wa-input-row input{flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;min-height:44px}
 .wa-input-row button{padding:10px 16px;border:none;border-radius:8px;font-weight:700;font-size:13px;color:#fff;background:#25d366;cursor:pointer;min-height:44px;flex-shrink:0}
 .wa-result{margin-top:8px;font-size:12px}
-.wa-steps{font-size:12px;color:#666;line-height:1.8;margin-top:10px;padding-left:16px}
+.wa-steps{font-size:12px;color:#666;line-height:1.8;margin-top:8px}
 
 .footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e0e0e0;padding:8px 16px;padding-bottom:calc(8px + env(safe-area-inset-bottom));z-index:60;display:flex;justify-content:space-between;align-items:center}
 .footer-bar .info{font-size:11px;color:#999}
 .footer-bar button{background:#1a73e8;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;min-height:40px;cursor:pointer}
 
-.filter-bar{background:#fff;border-bottom:1px solid #e8e8e8;padding:8px 12px;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;position:sticky;top:0;z-index:50}
-.filter-bar::-webkit-scrollbar{display:none}
-.filter-bar select{background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;padding:7px 10px;font-size:12px;min-height:36px;cursor:pointer}
-.filter-bar button{border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;min-height:36px;cursor:pointer;flex-shrink:0}
-.btn-live{background:#1a73e8;color:#fff}
-.btn-auto{background:#f0f0f0;color:#555;border:1px solid #ddd}
-.btn-auto.on{background:#e6f4ea;color:#0d9b4a;border-color:#0d9b4a}
-
 .empty{text-align:center;padding:40px 16px;color:#999;font-size:13px}
 .warn{padding:8px 16px;font-size:11px;text-align:center;color:#888;background:#fef7e0;border-bottom:1px solid #e8e8e8}
 
 .section-title{padding:10px 16px 4px;font-size:11px;font-weight:700;color:#888;letter-spacing:.5px}
+
+.airport-group{display:none}
+.airport-group.active{display:block}
 </style>
 </head>
 <body>
@@ -138,6 +143,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
 </div>
 
 <div id="recoSection"></div>
+<div id="airspaceSection" class="airspace" style="display:none"></div>
+
+<div class="airport-tabs" id="airportTabs"></div>
 
 <div class="filter-bar">
   <select id="sortBy">
@@ -155,19 +163,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
   <button class="btn-auto" id="autoBtn" onclick="toggleAuto()">自动:关</button>
 </div>
 
-<div id="airspaceSection" class="airspace" style="display:none"></div>
-
 <div id="flightsContainer"><div class="empty">正在加载航班数据...</div></div>
 
 <div class="section-title">WhatsApp 实时通知</div>
 <div class="wa-section">
   <h3>💬 航班变化通知</h3>
-  <p style="font-size:12px;color:#666;margin-bottom:10px">航班取消、延误、恢复运营或价格变动时，第一时间通过WhatsApp通知您。</p>
-  <ol class="wa-steps">
-    <li>打开WhatsApp，发送 <strong style="color:#25d366;background:#f0faf4;padding:1px 4px;border-radius:3px">join spoken-yet</strong> 到 <strong>+1 (415) 523-8886</strong></li>
-    <li>等待Twilio确认回复</li>
-    <li>在下方输入您的手机号并订阅</li>
-  </ol>
+  <p style="font-size:12px;color:#666;margin-bottom:6px">航班取消、延误、恢复运营或价格变动时，第一时间通过WhatsApp通知您。</p>
+  <div class="wa-steps">
+    使用WhatsApp商业号推送，无需加入沙盒，输入号码即可订阅。
+  </div>
   <div class="wa-input-row" style="margin-top:10px">
     <input type="tel" id="waPhone" placeholder="+8613812345678">
     <button onclick="testWA()">测试</button>
@@ -186,11 +190,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
 <script>
 const API = '/api';
 let autoRefresh = false, countdown = 0, countdownTimer = null;
+let activeTab = 'RUH';
 
 const STATUS_CN = {
   operating: '正常运营', scheduled: '已计划', cancelled: '已取消',
   delayed: '延误', unknown: '未知', landed: '已降落',
 };
+
+const AIRPORT_NAMES = {RUH:'利雅得', JED:'吉达', DMM:'达曼'};
+const AIRPORT_ORDER = ['RUH', 'JED', 'DMM'];
 
 function qs(id) { return document.getElementById(id); }
 
@@ -212,7 +220,6 @@ async function loadData(live) {
 function render(data) {
   qs('headerTime').innerHTML = data.updated_cst + '<br>' + data.updated_ast;
 
-  // Recommendation
   const rec = data.recommendation;
   if (rec) {
     const cls = rec.action === 'go_now' ? 'go' : 'wait';
@@ -222,7 +229,6 @@ function render(data) {
       <div><strong>${label}</strong><div class="reason">${rec.reason}</div></div></div>`;
   }
 
-  // Airspace
   if (data.airspace) {
     let h = '<h3>空域状态</h3><div class="tags">';
     data.airspace.closed.forEach(c => h += `<span class="tag closed">${c} 关闭</span>`);
@@ -233,15 +239,8 @@ function render(data) {
     qs('airspaceSection').style.display = '';
   }
 
-  // Count flights by status and group by origin airport
-  const airports = data.airports || [];
-  const airportMap = {};
-  airports.forEach(a => airportMap[a.code] = a);
-
   const routesByOrigin = {};
   let cOk = 0, cCancel = 0, cDelay = 0, cTotal = 0;
-
-  // Deduplicate flights for counting (same flight_number counted once)
   const countedFlights = new Set();
 
   data.routes.forEach(r => {
@@ -249,7 +248,6 @@ function render(data) {
     const firstLeg = r.legs[0];
     const originCode = firstLeg.from;
 
-    // Count unique flights by first leg
     if (!countedFlights.has(firstLeg.flight)) {
       countedFlights.add(firstLeg.flight);
       cTotal++;
@@ -267,28 +265,35 @@ function render(data) {
   qs('countDelay').textContent = cDelay;
   qs('countTotal').textContent = cTotal;
 
-  // Render grouped by airport
-  const airportOrder = ['RUH', 'JED', 'DMM'];
-  const otherOrigins = Object.keys(routesByOrigin).filter(k => !airportOrder.includes(k));
-  const allOrigins = [...airportOrder.filter(k => routesByOrigin[k]), ...otherOrigins];
+  const otherOrigins = Object.keys(routesByOrigin).filter(k => !AIRPORT_ORDER.includes(k));
+  const allOrigins = [...AIRPORT_ORDER.filter(k => routesByOrigin[k]), ...otherOrigins];
+
+  if (!allOrigins.includes(activeTab) && allOrigins.length > 0) {
+    activeTab = allOrigins[0];
+  }
+
+  let tabsHtml = '';
+  allOrigins.forEach(code => {
+    const count = (routesByOrigin[code] || []).length;
+    const city = AIRPORT_NAMES[code] || code;
+    const isActive = code === activeTab ? 'active' : '';
+    tabsHtml += `<div class="airport-tab ${isActive}" onclick="switchTab('${code}')">
+      <span class="tab-code">${code}</span>
+      <span class="tab-city">${city}</span>
+      <span class="tab-count">${count}个航班</span>
+    </div>`;
+  });
+  qs('airportTabs').innerHTML = tabsHtml;
 
   let html = '';
   allOrigins.forEach(code => {
     const routes = routesByOrigin[code] || [];
-    const info = airportMap[code] || {};
-    const cityName = {'RUH':'利雅得','JED':'吉达','DMM':'达曼'}[code] || info.city || code;
+    const isActive = code === activeTab ? 'active' : '';
 
-    html += `<div class="airport-group">
-      <div class="airport-header">
-        <span class="code">${code}</span>
-        <span class="name">${cityName} ${info.name || ''}</span>
-        <span class="count">${routes.length}个航班</span>
-      </div>`;
-
+    html += `<div class="airport-group ${isActive}" id="group-${code}">`;
     routes.forEach(r => {
       html += renderFlightCard(r, data.conflict_start);
     });
-
     html += '</div>';
   });
 
@@ -300,6 +305,16 @@ function render(data) {
   }
 }
 
+function switchTab(code) {
+  activeTab = code;
+  document.querySelectorAll('.airport-tab').forEach(t => {
+    t.classList.toggle('active', t.querySelector('.tab-code').textContent === code);
+  });
+  document.querySelectorAll('.airport-group').forEach(g => {
+    g.classList.toggle('active', g.id === 'group-' + code);
+  });
+}
+
 function renderFlightCard(route, conflictStart) {
   const legs = route.legs || [];
   if (!legs.length) return '';
@@ -308,7 +323,6 @@ function renderFlightCard(route, conflictStart) {
   const isMultiLeg = legs.length > 1;
   const changed = route.changed ? 'changed' : '';
 
-  // Build route string
   let routeStr = firstLeg.from;
   if (isMultiLeg) {
     legs.forEach((l, i) => {
@@ -320,14 +334,12 @@ function renderFlightCard(route, conflictStart) {
   const flightNums = legs.map(l => l.flight).join(' + ');
   const airlines = [...new Set(legs.map(l => l.airline))].join(' / ');
 
-  // Overall status (worst of all legs)
   const statusPriority = {cancelled:0, delayed:1, unknown:2, scheduled:3, operating:4, landed:5};
   let worstStatus = 'operating';
   legs.forEach(l => {
     if ((statusPriority[l.status] || 2) < (statusPriority[worstStatus] || 2)) worstStatus = l.status;
   });
 
-  // History dots for first leg (primary flight)
   let dotsHtml = '';
   const history = firstLeg.history || {};
   const dates = Object.keys(history).sort();
@@ -335,16 +347,14 @@ function renderFlightCard(route, conflictStart) {
     dotsHtml = '<div class="card-row3"><span class="history-label">历史:</span><div class="history-dots">';
     dates.forEach(d => {
       const s = history[d] || 'none';
-      const dateLabel = d.slice(5); // MM-DD
+      const dateLabel = d.slice(5);
       dotsHtml += `<div style="display:flex;flex-direction:column;align-items:center;gap:1px" title="${d}: ${STATUS_CN[s]||s}"><div class="dot ${s}"></div><div class="dot-date">${dateLabel}</div></div>`;
     });
     dotsHtml += '</div></div>';
   }
 
-  // Price
-  const priceStr = route.price_economy ? `¥${Math.round(route.price_economy * 7.2).toLocaleString()} / $${route.price_economy.toLocaleString()}` : '';
+  const priceStr = route.price_economy ? `¥${Math.round(route.price_economy * 7.2).toLocaleString()}` : '';
 
-  // Schedule days
   const days = firstLeg.days || [];
   const dayStr = days.includes('daily') ? '每日' : days.join('/');
 
@@ -356,6 +366,8 @@ function renderFlightCard(route, conflictStart) {
     if (li > 0 && l.layover_before != null) {
       detailHtml += `<div class="leg-connector">⏳ 在 ${l.from} 中转等待 ${l.layover_before}小时</div>`;
     }
+    const cnyEco = l.price_economy ? `¥${Math.round(l.price_economy * 7.2).toLocaleString()}` : '—';
+    const cnyBiz = l.price_business ? `¥${Math.round(l.price_business * 7.2).toLocaleString()}` : '—';
     detailHtml += `<div class="detail-grid">
       <div class="detail-item"><span class="dl">航班</span><span class="dv">${l.flight} ${l.airline}</span></div>
       <div class="detail-item"><span class="dl">机型</span><span class="dv">${l.aircraft || '—'}</span></div>
@@ -366,10 +378,10 @@ function renderFlightCard(route, conflictStart) {
     </div>`;
 
     if (l.price_economy) {
-      detailHtml += `<div style="margin-top:6px;font-size:12px;color:#666">经济舱 $${l.price_economy} · 商务舱 $${l.price_business || '—'}</div>`;
+      detailHtml += `<div style="margin-top:6px;font-size:12px;color:#666">经济舱 ${cnyEco} · 商务舱 ${cnyBiz}</div>`;
     }
 
-    const bookUrl = l.booking_url || `https://www.google.com/travel/flights?q=${encodeURIComponent(l.from+' to '+l.to+' one way')}&curr=USD`;
+    const bookUrl = l.booking_url || `https://www.google.com/travel/flights?q=${encodeURIComponent(l.from+' to '+l.to+' one way')}`;
     detailHtml += `<div class="detail-actions">
       <a class="btn-book" href="${bookUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">预订 ${l.flight}</a>
       ${l.contact ? `<a class="btn-call" href="tel:${l.contact.replace(/[^+0-9]/g,'')}" onclick="event.stopPropagation()">拨打 ${l.contact}</a>` : ''}

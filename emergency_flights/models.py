@@ -81,7 +81,7 @@ class FlightLeg(BaseModel):
     price_business_usd: Optional[float] = None
     seats_available: Optional[bool] = None
     conflict_proximity: ConflictProximity = ConflictProximity.MEDIUM
-    status: FlightStatus = FlightStatus.UNKNOWN
+    status: FlightStatus = FlightStatus.SCHEDULED
     status_source: str = ""
     price_source: str = ""
     over_budget: bool = False

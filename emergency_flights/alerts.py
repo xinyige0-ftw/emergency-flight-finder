@@ -37,6 +37,9 @@ def _save_subscriptions(data: dict) -> None:
         pass
 
 
+WHATSAPP_CONTENT_SID = os.environ.get("WHATSAPP_CONTENT_SID", "HX245a5624880424408683e063780a448f")
+
+
 class AlertConfig:
     def __init__(
         self,
@@ -48,11 +51,14 @@ class AlertConfig:
         whatsapp_to: str = "",
         enabled: bool = True,
         cooldown: int = ALERT_COOLDOWN_SECONDS,
+        content_sid: str = "",
     ):
         self.twilio_sid = twilio_sid or os.environ.get("TWILIO_ACCOUNT_SID", "")
         self.twilio_token = twilio_token or os.environ.get("TWILIO_AUTH_TOKEN", "")
         self.twilio_from = twilio_from or os.environ.get("TWILIO_FROM_NUMBER", "")
-        self.twilio_whatsapp_from = twilio_whatsapp_from or os.environ.get("TWILIO_WHATSAPP_FROM", "+14155238886")
+        self.twilio_whatsapp_from = twilio_whatsapp_from or os.environ.get(
+            "TWILIO_WHATSAPP_FROM", "whatsapp:+15558376873"
+        )
         self.phone_to = phone_to or os.environ.get("EVAC_ALERT_PHONE", "")
         self.whatsapp_to = whatsapp_to or os.environ.get("EVAC_ALERT_WHATSAPP", "")
         if not self.whatsapp_to:
@@ -60,6 +66,7 @@ class AlertConfig:
             self.whatsapp_to = (subs.get("whatsapp") or "").strip()
         self.enabled = enabled
         self.cooldown = cooldown
+        self.content_sid = content_sid or WHATSAPP_CONTENT_SID
 
     @property
     def is_configured(self) -> bool:
@@ -163,7 +170,7 @@ async def send_alerts(changes: list[dict], config: AlertConfig) -> int:
         if now - last_sent < config.cooldown:
             continue
 
-        body = f"🚨 EVAC ALERT: {change['message']}"
+        body = f"🚨 航班变动提醒: {change['message']}"
 
         try:
             if config.phone_to:
@@ -195,15 +202,28 @@ async def _send_twilio_sms(config: AlertConfig, to: str, body: str):
 
 
 async def _send_twilio_whatsapp(config: AlertConfig, to: str, body: str):
+    """Send WhatsApp via Twilio Content API template (business-initiated, no 24h window)."""
+    import json as _json
     import httpx
     url = f"https://api.twilio.com/2010-04-01/Accounts/{config.twilio_sid}/Messages.json"
-    wa_from = f"whatsapp:{config.twilio_whatsapp_from}"
-    wa_to = f"whatsapp:{to}"
+    wa_from = config.twilio_whatsapp_from
+    if not wa_from.startswith("whatsapp:"):
+        wa_from = f"whatsapp:{wa_from}"
+    wa_to = f"whatsapp:{to}" if not to.startswith("whatsapp:") else to
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    content_vars = _json.dumps({"1": timestamp, "2": "1", "3": body})
+
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.post(
             url,
             auth=(config.twilio_sid, config.twilio_token),
-            data={"From": wa_from, "To": wa_to, "Body": body},
+            data={
+                "From": wa_from,
+                "To": wa_to,
+                "ContentSid": config.content_sid,
+                "ContentVariables": content_vars,
+            },
         )
         if resp.status_code not in (200, 201):
             raise Exception(f"Twilio WhatsApp failed: {resp.status_code} {resp.text[:200]}")
