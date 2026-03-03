@@ -38,7 +38,7 @@ app = FastAPI(title="沙特回国航班监控")
 SCENARIOS_DIR = Path(__file__).parent.parent / "scenarios"
 STATIC_DIR = Path(__file__).parent.parent / "static"
 
-WHATSAPP_CONTENT_SID = os.environ.get("WHATSAPP_CONTENT_SID", "HX245a5624880424408683e063780a448f")
+WHATSAPP_CONTENT_SID = os.environ.get("WHATSAPP_CONTENT_SID", "HX2238fa5df250b29a9158e67929229e0a")
 
 
 @app.on_event("startup")

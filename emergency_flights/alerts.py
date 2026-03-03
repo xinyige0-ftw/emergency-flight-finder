@@ -54,7 +54,7 @@ def _get_whatsapp_recipients() -> list[str]:
     return []
 
 
-WHATSAPP_CONTENT_SID = os.environ.get("WHATSAPP_CONTENT_SID", "HX245a5624880424408683e063780a448f")
+WHATSAPP_CONTENT_SID = os.environ.get("WHATSAPP_CONTENT_SID", "HX2238fa5df250b29a9158e67929229e0a")
 
 
 class AlertConfig:
