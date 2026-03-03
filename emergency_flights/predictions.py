@@ -97,7 +97,7 @@ _SEED_HISTORY = {
         "AI902": "operating", "AI314": "operating", "AI348": "operating",
         "SV1079": "cancelled", "SV1085": "cancelled",
         "XY402": "cancelled", "SV1055": "cancelled", "SV1521": "cancelled",
-        "SV886": "cancelled",
+        "SV886": "cancelled", "SV888": "cancelled",
     },
     "2026-03-01": {
         "CZ5008": "cancelled", "SV884": "operating", "CX644": "cancelled",
@@ -113,7 +113,7 @@ _SEED_HISTORY = {
         "AI902": "operating", "AI314": "operating", "AI348": "operating",
         "SV1079": "cancelled", "SV1085": "cancelled",
         "XY402": "cancelled", "SV1055": "cancelled", "SV1521": "cancelled",
-        "SV886": "cancelled",
+        "SV886": "cancelled", "SV888": "cancelled",
     },
     "2026-03-02": {
         "CZ5008": "operating", "SV884": "operating", "CX644": "cancelled",
@@ -129,7 +129,7 @@ _SEED_HISTORY = {
         "AI902": "operating", "AI314": "operating", "AI348": "operating",
         "SV1079": "operating", "SV1085": "cancelled",
         "XY402": "cancelled", "SV1055": "operating", "SV1521": "cancelled",
-        "SV886": "cancelled",
+        "SV886": "cancelled", "SV888": "cancelled",
     },
 }
 

@@ -204,6 +204,21 @@ known_flights:
     price_business_usd: 3800
     conflict_proximity: "low"
 
+  - flight_number: "SV888"
+    airline: "沙特航空"
+    origin: "RUH"
+    destination: "PKX"
+    days: ["Sun", "Wed"]
+    depart_utc: "00:10"
+    arrive_utc: "14:05"
+    duration_hours: 8.9
+    aircraft: "787-9"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 700
+    price_business_usd: 3500
+    conflict_proximity: "low"
+
   # ══════════════════════════════════════════════════
   # 直飞: 吉达 JED → 中国
   # ══════════════════════════════════════════════════
