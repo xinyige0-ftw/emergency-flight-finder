@@ -148,7 +148,7 @@ known_flights:
     airline: "南方航空"
     origin: "RUH"
     destination: "SZX"
-    days: ["Tue", "Thu", "Sat"]
+    days: ["Mon", "Wed", "Fri"]
     depart_utc: "21:30"
     arrive_utc: "05:40+1"
     duration_hours: 8.2
@@ -163,7 +163,7 @@ known_flights:
     airline: "沙特航空"
     origin: "RUH"
     destination: "CAN"
-    days: ["Tue", "Thu", "Sat"]
+    days: ["Sun", "Tue", "Thu"]
     depart_utc: "21:40"
     arrive_utc: "10:30+1"
     duration_hours: 7.8
@@ -178,7 +178,7 @@ known_flights:
     airline: "国泰航空"
     origin: "RUH"
     destination: "HKG"
-    days: ["daily"]
+    days: ["Sun", "Tue", "Wed", "Thu", "Fri"]
     depart_utc: "20:50"
     arrive_utc: "04:55+1"
     duration_hours: 8.1
@@ -193,7 +193,7 @@ known_flights:
     airline: "中国国航"
     origin: "RUH"
     destination: "PEK"
-    days: ["Mon", "Wed", "Fri", "Sun"]
+    days: ["Sun", "Mon", "Wed", "Thu", "Fri"]
     depart_utc: "21:05"
     arrive_utc: "10:45+1"
     duration_hours: 8.5
@@ -226,7 +226,7 @@ known_flights:
     airline: "沙特航空"
     origin: "JED"
     destination: "CAN"
-    days: ["Mon", "Wed", "Fri"]
+    days: ["Mon", "Wed", "Sat"]
     depart_utc: "22:50"
     arrive_utc: "12:25+1"
     duration_hours: 8.6
@@ -552,8 +552,8 @@ known_flights:
     airline: "沙特航空"
     origin: "RUH"
     destination: "BKK"
-    days: ["Mon", "Wed", "Fri"]
-    depart_utc: "20:00"
+    days: ["Wed", "Fri", "Sat"]
+    depart_utc: "20:40"
     arrive_utc: "07:30+1"
     duration_hours: 8.5
     aircraft: "787-9"
@@ -565,12 +565,12 @@ known_flights:
 
   - flight_number: "SV848"
     airline: "沙特航空"
-    origin: "RUH"
-    destination: "KUL"
-    days: ["Tue", "Thu", "Sat"]
-    depart_utc: "20:30"
-    arrive_utc: "08:00+1"
-    duration_hours: 8.5
+    origin: "JED"
+    destination: "BKK"
+    days: ["Mon", "Wed"]
+    depart_utc: "05:50"
+    arrive_utc: "13:30"
+    duration_hours: 7.7
     aircraft: "787-9"
     contact: "+966 9200 22222"
     booking_url: "https://www.saudia.com/"

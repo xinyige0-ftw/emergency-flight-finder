@@ -15,6 +15,14 @@ console = Console(stderr=True)
 HISTORY_FILE = Path.home() / ".flight_monitor_history.json"
 CONFLICT_START_DATE = date(2026, 2, 28)
 
+# All "today" calculations use Saudi Arabia time (UTC+3) since flights depart from there
+_AST = timezone(timedelta(hours=3))
+
+
+def _today_saudi() -> date:
+    """Return today's date in Saudi Arabia local time (UTC+3)."""
+    return datetime.now(_AST).date()
+
 STATUS_LABELS = {
     "operating": "正常",
     "scheduled": "计划",
@@ -84,63 +92,72 @@ TRANSIT_VISA_RULES = {
 
 _SEED_STATUS = {
     # Feb 28=Sat | Mar 1=Sun | Mar 2=Mon | Mar 3=Tue
-    # Verified against flightera.net where available. Only on actual operating days.
+    # Sources: flightera.net (primary), FlightAware, Cathay Pacific news release.
+    # Dates use Saudi time (UTC+3). Only entries on actual operating days.
     #
     # ── Direct China flights ──
-    # CZ5008 Tue/Thu/Sat — flightera: Feb 28 "Unknown", Mar 3 cancelled (user-confirmed)
-    "CZ5008":  {"2026-02-28": "unknown",                                                                       "2026-03-03": "cancelled"},
-    # SV884 Tue/Thu/Sat — flightera (CZ7893): Feb 28 was arrival of Feb 27 dep, not a Feb 28 service. Mar 3 Cancelled.
-    "SV884":   {                                                                                                 "2026-03-03": "cancelled"},
-    # CX644 daily
-    "CX644":   {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},
-    # CA790 Mon/Wed/Fri/Sun
-    "CA790":   {                             "2026-03-01": "cancelled",  "2026-03-02": "cancelled"},                                          # Mon/Wed/Fri/Sun → Mar 3=Tue ✗
-    # SV888 Sun/Wed
-    "SV888":   {                             "2026-03-01": "cancelled"},
-    # SV882 Mon/Wed/Fri — flightera: Mar 2 Landed on time, Mar 4 (Wed) Planned
-    "SV882":   {                                                         "2026-03-02": "operating"},
-    # SV886 Mon/Fri
-    "SV886":   {                                                         "2026-03-02": "cancelled"},
+    # CZ5008 Mon/Wed/Fri — flightera: Feb 28 (Sat dep, listed as Mar 1 arrival) "Unknown";
+    #   Mar 4 listing (dep Mar 3 Tue night) = Planned. No Mar 3 cancellation confirmed on flightera.
+    "CZ5008":  {"2026-02-28": "unknown"},
+    # SV884 Sun/Tue/Thu — flightera: Feb 28 listing was Feb 27 Fri dep (7h late), not a Feb 28 service.
+    #   Mar 3 (Tue) Cancelled confirmed on flightera.
+    "SV884":   {                                                                                                "2026-03-03": "cancelled"},
+    # CX644 Sun/Tue/Wed/Thu/Fri — Cathay cancelled ALL Riyadh flights until Mar 7 per news release.
+    "CX644":   {"2026-02-28": "cancelled", "2026-03-01": "cancelled", "2026-03-02": "cancelled",              "2026-03-03": "cancelled"},
+    # CA790 Sun/Mon/Wed/Thu/Fri — flightera: Feb 28 (Sat) LANDED 35min late.
+    #   Mar 2 (Mon) CANCELLED. Mar 3=Tue not scheduled.
+    "CA790":   {"2026-02-28": "operating",  "2026-03-01": "cancelled", "2026-03-02": "cancelled"},
+    # SV888 Sun/Wed — Mar 1 (Sun) likely cancelled. Mar 3=Tue not scheduled.
+    "SV888":   {                            "2026-03-01": "cancelled"},
+    # SV882 Mon/Wed/Sat — flightera: Feb 28 (Sat) not shown = likely cancelled.
+    #   Mar 2 (Mon) Landed on time. Mar 3=Tue not scheduled. Mar 4 (Wed) Planned.
+    "SV882":   {"2026-02-28": "cancelled",                             "2026-03-02": "operating"},
+    # SV886 DMM→PKX — flightera: Feb 27 (Fri) Landed. Mar 2 (Mon) DMM→PKX Cancelled.
+    #   Feb 28 (Sat) not shown. Mar 3=Tue not scheduled.
+    "SV886":   {                                                       "2026-03-02": "cancelled"},
     #
     # ── Turkish (daily, confirmed operating throughout) ──
-    "TK145":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
-    "TK157":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
-    "TK170":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
-    "TK88":    {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
-    "TK26":    {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
-    "TK72":    {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
-    "TK54":    {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},
+    "TK145":   {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},
+    "TK157":   {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},
+    "TK170":   {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},
+    "TK88":    {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},
+    "TK26":    {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},
+    "TK72":    {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},
+    "TK54":    {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},
     #
     # ── Oman Air ──
-    "WY667":   {"2026-02-28": "delayed",    "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "WY669":   {                             "2026-03-01": "delayed",    "2026-03-02": "operating"},                                          # Mon/Wed/Fri/Sun
-    "WY841":   {"2026-02-28": "delayed",    "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "WY843":   {"2026-02-28": "cancelled",  "2026-03-01": "delayed",    "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "WY851":   {"2026-02-28": "cancelled",                                                                      "2026-03-03": "cancelled"},  # Tue/Thu/Sat
+    "WY667":   {"2026-02-28": "delayed",   "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "WY669":   {                            "2026-03-01": "delayed",   "2026-03-02": "operating"},                                           # Mon/Wed/Fri/Sun → Mar 3=Tue ✗
+    "WY841":   {"2026-02-28": "delayed",   "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "WY843":   {"2026-02-28": "cancelled", "2026-03-01": "delayed",   "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "WY851":   {"2026-02-28": "cancelled",                                                                     "2026-03-03": "cancelled"},  # Tue/Thu/Sat
     #
     # ── SE Asia connections ──
-    "CZ3036":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},   # daily
-    "TG668":   {"2026-02-28": "cancelled",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "TG614":   {"2026-02-28": "cancelled",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "SQ802":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "SQ830":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "MH376":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "MH388":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "SV846":   {                                                         "2026-03-02": "operating"},                                          # Mon/Wed/Fri
-    "SV848":   {"2026-02-28": "cancelled",                                                                      "2026-03-03": "cancelled"},  # Tue/Thu/Sat
-    "SV850":   {"2026-02-28": "cancelled",                               "2026-03-02": "cancelled"},                                          # Mon/Wed/Sat
+    "CZ3036":  {"2026-02-28": "cancelled", "2026-03-01": "cancelled", "2026-03-02": "cancelled",              "2026-03-03": "cancelled"},   # daily — CAN route suspended
+    "TG668":   {"2026-02-28": "cancelled", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "TG614":   {"2026-02-28": "cancelled", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "SQ802":   {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "SQ830":   {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "MH376":   {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "MH388":   {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    # SV846 Wed/Fri/Sat dep — flightera: Feb 28 (dep Feb 27 Fri) Landed. No Mar flights shown = likely cancelled.
+    "SV846":   {"2026-02-28": "operating"},
+    # SV848 JED→BKK Mon/Wed — flightera: Mar 2 (Mon) LANDED. Mar 4 (Wed) Planned.
+    "SV848":   {                                                       "2026-03-02": "operating"},
+    # SV850 Mon/Wed/Sat
+    "SV850":   {"2026-02-28": "cancelled",                             "2026-03-02": "cancelled"},                                           # Mon/Wed/Sat
     #
     # ── India ──
-    "AI902":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "AI314":   {                             "2026-03-01": "operating",  "2026-03-02": "operating"},                                          # Mon/Wed/Fri/Sun → Mar 3=Tue ✗
-    "AI348":   {"2026-02-28": "operating",  "2026-03-01": "operating",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
+    "AI902":   {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "AI314":   {                            "2026-03-01": "operating", "2026-03-02": "operating"},                                           # Mon/Wed/Fri/Sun → Mar 3=Tue ✗
+    "AI348":   {"2026-02-28": "operating", "2026-03-01": "operating", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
     #
     # ── Domestic/other ──
-    "SV1079":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "SV1085":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},   # daily
-    "XY402":   {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},   # daily
-    "SV1055":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "operating",             "2026-03-03": "operating"},   # daily
-    "SV1521":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",  "2026-03-02": "cancelled",             "2026-03-03": "cancelled"},   # daily
+    "SV1079":  {"2026-02-28": "cancelled", "2026-03-01": "cancelled", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "SV1085":  {"2026-02-28": "cancelled", "2026-03-01": "cancelled", "2026-03-02": "cancelled",              "2026-03-03": "cancelled"},   # daily
+    "XY402":   {"2026-02-28": "cancelled", "2026-03-01": "cancelled", "2026-03-02": "cancelled",              "2026-03-03": "cancelled"},   # daily
+    "SV1055":  {"2026-02-28": "cancelled", "2026-03-01": "cancelled", "2026-03-02": "operating",              "2026-03-03": "operating"},   # daily
+    "SV1521":  {"2026-02-28": "cancelled", "2026-03-01": "cancelled", "2026-03-02": "cancelled",              "2026-03-03": "cancelled"},   # daily
 }
 
 
@@ -180,7 +197,7 @@ def apply_historical_statuses(flights: list) -> list:
     """Override default 'scheduled' status with today's seed/historical data.
     Accepts a list of FlightLeg objects and mutates their .status in-place."""
     from .models import FlightStatus
-    today_key = datetime.now(timezone.utc).date().isoformat()
+    today_key = _today_saudi().isoformat()
     history = _load_history()
     all_flights = history.get("flights", {})
 
@@ -202,7 +219,7 @@ def apply_historical_statuses(flights: list) -> list:
 def record_flight_status(flight_number: str, status: str, check_date: Optional[date] = None):
     """Record a single flight's status for a given date."""
     if check_date is None:
-        check_date = datetime.now(timezone.utc).date()
+        check_date = _today_saudi()
 
     history = _load_history()
     flights = history.setdefault("flights", {})
@@ -221,7 +238,7 @@ def record_all_flight_statuses(routes: list[Route]):
     """Record status of every flight leg in the current route set.
     Preserves seed data: won't overwrite a meaningful status (e.g. 'cancelled')
     with a default 'scheduled'."""
-    today = datetime.now(timezone.utc).date()
+    today = _today_saudi()
     history = _load_history()
     flights = history.setdefault("flights", {})
 
@@ -257,7 +274,7 @@ def get_flight_history(flight_number: str) -> dict[str, str]:
 
     result = {}
     current = CONFLICT_START_DATE
-    today = datetime.now(timezone.utc).date()
+    today = _today_saudi()
 
     while current <= today:
         date_key = current.isoformat()
@@ -274,7 +291,7 @@ def get_all_flight_histories() -> dict[str, dict[str, str]]:
     all_flights = history.get("flights", {})
 
     result = {}
-    today = datetime.now(timezone.utc).date()
+    today = _today_saudi()
 
     for flight_number, flight_data in all_flights.items():
         flight_history = {}
@@ -298,7 +315,7 @@ def get_daily_summary() -> list[dict]:
     history = _load_history()
     all_flights = history.get("flights", {})
 
-    today = datetime.now(timezone.utc).date()
+    today = _today_saudi()
     current = CONFLICT_START_DATE
     summaries = []
 
