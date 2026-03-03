@@ -82,75 +82,84 @@ TRANSIT_VISA_RULES = {
 }
 
 
-_SEED_HISTORY = {
-    "2026-02-28": {
-        "CZ5008": "cancelled", "SV884": "cancelled", "CX644": "cancelled",
-        "CA790": "cancelled", "SV882": "cancelled",
-        "TK145": "operating", "TK157": "operating", "TK170": "operating",
-        "TK88": "operating", "TK26": "operating", "TK72": "operating", "TK54": "operating",
-        "WY667": "delayed", "WY669": "delayed", "WY841": "delayed",
-        "WY843": "cancelled", "WY851": "cancelled",
-        "CZ3036": "cancelled", "TG668": "cancelled", "TG614": "cancelled",
-        "SQ802": "operating", "SQ830": "operating",
-        "MH376": "operating", "MH388": "operating",
-        "SV846": "cancelled", "SV848": "cancelled", "SV850": "cancelled",
-        "AI902": "operating", "AI314": "operating", "AI348": "operating",
-        "SV1079": "cancelled", "SV1085": "cancelled",
-        "XY402": "cancelled", "SV1055": "cancelled", "SV1521": "cancelled",
-        "SV886": "cancelled", "SV888": "cancelled",
-    },
-    "2026-03-01": {
-        "CZ5008": "cancelled", "SV884": "operating", "CX644": "cancelled",
-        "CA790": "cancelled", "SV882": "operating",
-        "TK145": "operating", "TK157": "operating", "TK170": "operating",
-        "TK88": "operating", "TK26": "operating", "TK72": "operating", "TK54": "operating",
-        "WY667": "operating", "WY669": "operating", "WY841": "operating",
-        "WY843": "delayed", "WY851": "cancelled",
-        "CZ3036": "cancelled", "TG668": "operating", "TG614": "operating",
-        "SQ802": "operating", "SQ830": "operating",
-        "MH376": "operating", "MH388": "operating",
-        "SV846": "operating", "SV848": "cancelled", "SV850": "cancelled",
-        "AI902": "operating", "AI314": "operating", "AI348": "operating",
-        "SV1079": "cancelled", "SV1085": "cancelled",
-        "XY402": "cancelled", "SV1055": "cancelled", "SV1521": "cancelled",
-        "SV886": "cancelled", "SV888": "cancelled",
-    },
-    "2026-03-02": {
-        "CZ5008": "operating", "SV884": "operating", "CX644": "cancelled",
-        "CA790": "cancelled", "SV882": "operating",
-        "TK145": "operating", "TK157": "operating", "TK170": "operating",
-        "TK88": "operating", "TK26": "operating", "TK72": "operating", "TK54": "operating",
-        "WY667": "operating", "WY669": "operating", "WY841": "operating",
-        "WY843": "operating", "WY851": "delayed",
-        "CZ3036": "cancelled", "TG668": "operating", "TG614": "operating",
-        "SQ802": "operating", "SQ830": "operating",
-        "MH376": "operating", "MH388": "operating",
-        "SV846": "operating", "SV848": "operating", "SV850": "cancelled",
-        "AI902": "operating", "AI314": "operating", "AI348": "operating",
-        "SV1079": "operating", "SV1085": "cancelled",
-        "XY402": "cancelled", "SV1055": "operating", "SV1521": "cancelled",
-        "SV886": "cancelled", "SV888": "cancelled",
-    },
+_SEED_STATUS = {
+    # Feb 28 = Sat | Mar 1 = Sun | Mar 2 = Mon
+    # Only entries for days a flight actually operates (checked against scenario days).
+    # Direct China flights
+    "CZ5008":  {"2026-02-28": "cancelled",                                       "2026-03-02": "operating"},  # Tue/Thu/Sat → Sat✓, Mon✗→skip, but next Tue
+    "SV884":   {"2026-02-28": "cancelled"},                                                                    # Tue/Thu/Sat
+    "CX644":   {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # daily
+    "CA790":   {                             "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # Mon/Wed/Fri/Sun
+    "SV888":   {                             "2026-03-01": "cancelled"},                                        # Sun/Wed
+    "SV882":   {                                                                  "2026-03-02": "operating"},   # Mon/Wed/Fri
+    "SV886":   {                                                                  "2026-03-02": "cancelled"},   # Mon/Fri
+    # Turkish (daily)
+    "TK145":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
+    "TK157":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
+    "TK170":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
+    "TK88":    {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
+    "TK26":    {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
+    "TK72":    {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
+    "TK54":    {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},
+    # Oman Air
+    "WY667":   {"2026-02-28": "delayed",    "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
+    "WY669":   {                             "2026-03-01": "delayed",             "2026-03-02": "operating"},   # Mon/Wed/Fri/Sun
+    "WY841":   {"2026-02-28": "delayed",    "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
+    "WY843":   {"2026-02-28": "cancelled",  "2026-03-01": "delayed",             "2026-03-02": "operating"},   # daily
+    "WY851":   {"2026-02-28": "cancelled",                                       },                            # Tue/Thu/Sat
+    # SE Asia connections
+    "CZ3036":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # daily
+    "TG668":   {"2026-02-28": "cancelled",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
+    "TG614":   {"2026-02-28": "cancelled",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
+    "SQ802":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
+    "SQ830":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
+    "MH376":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
+    "MH388":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
+    "SV846":   {                                                                  "2026-03-02": "operating"},   # Mon/Wed/Fri
+    "SV848":   {"2026-02-28": "cancelled"},                                                                    # Tue/Thu/Sat
+    "SV850":   {"2026-02-28": "cancelled",                                       "2026-03-02": "cancelled"},   # Mon/Wed/Sat
+    # India
+    "AI902":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
+    "AI314":   {                             "2026-03-01": "operating",           "2026-03-02": "operating"},   # Mon/Wed/Fri/Sun
+    "AI348":   {"2026-02-28": "operating",  "2026-03-01": "operating",           "2026-03-02": "operating"},   # daily
+    # Domestic/other
+    "SV1079":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "operating"},   # daily
+    "SV1085":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # daily
+    "XY402":   {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # daily
+    "SV1055":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "operating"},   # daily
+    "SV1521":  {"2026-02-28": "cancelled",  "2026-03-01": "cancelled",           "2026-03-02": "cancelled"},   # daily
 }
 
 
 def seed_initial_history():
-    """Pre-populate history for Feb 28 - Mar 2 if not already present."""
+    """Pre-populate history for Feb 28 - Mar 2, only on days each flight actually operates.
+    Overwrites seed-date entries to fix any stale data from earlier seeding."""
     history = _load_history()
     flights = history.setdefault("flights", {})
-    seeded = False
+    seed_dates = set()
+    for ds in _SEED_STATUS.values():
+        seed_dates.update(ds.keys())
 
-    for date_key, statuses in _SEED_HISTORY.items():
-        for flight_number, status in statuses.items():
-            flight_data = flights.setdefault(flight_number, {})
-            if date_key not in flight_data:
+    changed = False
+    # Remove stale seed entries for flights that shouldn't have data on certain dates
+    for flight_number in list(flights.keys()):
+        expected = _SEED_STATUS.get(flight_number, {})
+        for d in list(seed_dates):
+            if d in flights.get(flight_number, {}) and d not in expected:
+                del flights[flight_number][d]
+                changed = True
+
+    for flight_number, date_statuses in _SEED_STATUS.items():
+        flight_data = flights.setdefault(flight_number, {})
+        for date_key, status in date_statuses.items():
+            if flight_data.get(date_key, {}).get("status") != status:
                 flight_data[date_key] = {
                     "status": status,
                     "checked_at": f"{date_key}T12:00:00+00:00",
                 }
-                seeded = True
+                changed = True
 
-    if seeded:
+    if changed:
         _save_history(history)
 
 
