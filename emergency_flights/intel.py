@@ -34,9 +34,12 @@ CONFLICT_KEYWORDS = [
 ]
 
 REGION_KEYWORDS = [
-    "bahrain", "saudi", "iran", "iraq", "qatar", "uae", "emirates",
-    "kuwait", "oman", "yemen", "israel", "jordan", "turkey",
+    "saudi", "riyadh", "jeddah", "dammam",
+    "china", "beijing", "shanghai", "guangzhou", "shenzhen", "hong kong",
+    "bahrain", "iran", "iraq", "qatar", "uae", "emirates",
+    "kuwait", "oman", "yemen", "israel", "jordan", "turkey", "istanbul",
     "gulf", "middle east", "persian gulf", "arabian",
+    "bangkok", "singapore", "kuala lumpur",
 ]
 
 HEADERS = {

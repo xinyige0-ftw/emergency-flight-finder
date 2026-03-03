@@ -1,153 +1,59 @@
-# Emergency Flight Finder
+# 沙特回国航班监控 (Saudi-to-China Flight Monitor)
 
-**Find the fastest way out of a conflict zone by air.**
+实时监控从沙特阿拉伯（利雅得、吉达、达曼）飞往中国的所有航班状态。
 
-Built during the Feb 2026 Iran conflict to help people evacuate when normal booking tools are useless — airports closed, airspace shut, airlines cancelling without notice.
+## 功能
 
----
+- **实时航班状态** — 通过 FlightRadar24 监控航班运营/取消/延误状态
+- **历史追踪** — 记录冲突开始以来（2月28日）每日航班状态变化
+- **多路线监控** — 直飞 + 经伊斯坦布尔/曼谷/新加坡/吉隆坡/德里等中转
+- **空域状态** — 显示区域空域开放/关闭/受限情况
+- **WhatsApp 通知** — 航班状态变化时实时推送 WhatsApp 消息
+- **价格追踪** — 经济舱/商务舱价格监控
+- **按机场分组** — 利雅得 RUH / 吉达 JED / 达曼 DMM 三大出发机场
 
-## Live
-
-**[emergency-flight-finder.vercel.app](https://emergency-flight-finder.vercel.app)**
-
-Open from any phone or browser. No install needed. Works offline (shows last known data).
-
----
-
-## What It Does
-
-| Feature | Details |
-|---|---|
-| **Route ranking** | Scores every possible escape route by total door-to-door time, penalising long pre-departure waits more than layovers |
-| **Live flight status** | Checks FlightRadar24 for each known flight — operating / scheduled / cancelled / delayed |
-| **Real prices** | Scrapes airline booking pages + Google Flights fallback; shows economy and business class |
-| **Seat availability** | Detects if seats are available and tags routes SEATS OK / SOLD OUT / UNKNOWN |
-| **Budget filter** | Hides or tags flights over your configured budget; defaults to $10,000 |
-| **Conflict news** | Live RSS from Al Jazeera, Reuters, BBC, FlightGlobal — auto-detects airspace change keywords |
-| **NOTAMs** | Fetches aviation notices for departure airports (RUH, JED, DMM, IST) |
-| **Smart predictions** | "Wait vs Go Now" recommendation based on 7 historical conflict patterns |
-| **Visa checker** | Tells you if your passport needs a transit visa at each hub (CN passport pre-configured) |
-| **Embassy advisories** | UK FCDO travel advisories for the region via Atom RSS |
-| **X / Twitter posts** | Real posts via Twitter API v2 (or Nitter RSS fallback) |
-| **WhatsApp alerts** | Twilio-powered alerts when route status changes |
-| **Multi-language** | English and Chinese (中文) throughout |
-| **Offline PWA** | Service worker caches last data; add to home screen for app-like experience |
-
----
-
-## Scoring Formula
-
-```
-score = (wait_hours × 1.5) + ground_hours + flight_hours + (layover_hours × 0.8) + conflict_penalty
-```
-
-Lower is better. Pre-departure wait is penalised more than layovers because in a conflict, every hour before you are airborne is higher risk.
-
----
-
-## Scenario: Bahrain → China (Feb 2026)
-
-- **Origin:** Bahrain — airspace **CLOSED**
-- **Ground escape:** King Fahd Causeway (1.5h) → Dammam, Saudi Arabia
-- **Departure airports:** DMM / RUH / JED
-- **Routes ranked:** Direct to China + via Istanbul (Turkish Airlines, lowest risk)
-- **Risk avoided:** Iran, Iraq, Qatar, UAE airspace
-
----
-
-## Run Locally
+## 快速开始
 
 ```bash
-git clone https://github.com/xinyige0-ftw/emergency-flight-finder
-cd emergency-flight-finder
-pip install -e .
+pip install -r requirements.txt
 
-# Web UI (recommended)
+# 启动 Web 服务
 evac serve
-# Open http://localhost:8000
 
-# CLI
-evac find
-evac find --watch                    # auto-refresh every 5 min
-evac find --sort price --max-stops 1
-evac status TK145                    # check a single flight
+# 或直接使用 uvicorn
+uvicorn emergency_flights.web:app --host 0.0.0.0 --port 8000
 ```
 
-### Environment variables (optional)
+打开浏览器访问 `http://localhost:8000`
 
-Copy `.env.example` to `.env` and fill in what you need:
+## 命令行
 
 ```bash
-# WhatsApp / SMS alerts
-TWILIO_ACCOUNT_SID=...
-TWILIO_AUTH_TOKEN=...
-TWILIO_FROM_NUMBER=+1...
-EVAC_ALERT_WHATSAPP=whatsapp:+86...
+# 查看航班状态
+evac find -s saudi_to_china
 
-# Real X/Twitter posts
-TWITTER_BEARER_TOKEN=...
+# 监控模式（自动刷新）
+evac find -s saudi_to_china --watch
 
-# Persistent community data
-SUPABASE_URL=...
-SUPABASE_KEY=...
+# 查看单个航班状态
+evac status CZ5008
 ```
 
----
+## WhatsApp 通知设置
 
-## Deploy
+1. 在 WhatsApp 中发送 `join spoken-yet` 到 `+1 (415) 523-8886`
+2. 设置环境变量：
+   ```
+   TWILIO_ACCOUNT_SID=your_sid
+   TWILIO_AUTH_TOKEN=your_token
+   TWILIO_WHATSAPP_FROM=+14155238886
+   ```
+3. 在网页中输入手机号并订阅
 
-**Vercel (recommended — already configured)**
+## 部署
 
-Push to `main` → auto-deploys. The `vercel.json` and `api/index.py` are already set up.
+支持 Vercel、Render、Docker 部署，配置文件已包含。
 
-**Render**
+## V1
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/xinyige0-ftw/emergency-flight-finder)
-
-**Docker**
-
-```bash
-docker build -t evac .
-docker run -p 8000:8000 evac
-```
-
----
-
-## CLI Reference
-
-```bash
-evac find                            # run with default scenario
-evac find -s bahrain_to_china        # specify scenario
-evac find --offline                  # skip live checks
-evac find --watch                    # auto-refresh
-evac find --refresh-interval 2       # refresh every 2 min
-evac find --sort price               # sort by price
-evac find --max-stops 1              # max 1 connection
-evac find --passengers 2             # 2 passengers
-evac find --budget 5000              # $5,000 cap
-evac status CX644                    # check single flight
-evac list-scenarios                  # show available scenarios
-```
-
----
-
-## Creating Your Own Scenario
-
-Add a YAML file to `scenarios/`. See `scenarios/bahrain_to_china.yaml` for the full structure. A scenario defines:
-
-- Origin location and whether its airport is open
-- Ground escape segments (border crossings, drives)
-- Operational airports you can reach
-- Safe hub airports for connections
-- Airspace status map
-- Known flights with schedules
-
----
-
-## Limitations
-
-- Flight status depends on FlightRadar24 being reachable (may be slow during major conflicts)
-- Schedule data is manually curated — confirm with airline before heading to the airport
-- Price scraping is best-effort — airline websites change their HTML frequently
-- SMS alerts require US A2P 10DLC registration; WhatsApp works without it
-- Community data is ephemeral on Vercel without Supabase configured
+原始版本（巴林撤离工具）保存在 `v1/` 目录中。

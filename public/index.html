@@ -1,641 +1,420 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#c0392b">
+<meta name="theme-color" content="#1a73e8">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="/manifest.json">
-<title>Emergency Flight Finder</title>
+<title>沙特回国航班监控</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{font-size:15px}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;background:#0f1117;color:#e8e8e8;padding-bottom:80px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue','Microsoft YaHei',sans-serif;background:#f5f6f8;color:#1a1a1a;padding-bottom:80px;line-height:1.5;-webkit-font-smoothing:antialiased}
 
-/* ── Header ── */
-.top{background:#c0392b;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:center;gap:8px}
-.top h1{font-size:15px;font-weight:800;letter-spacing:.3px;color:#fff}
-.top .lang{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 11px;border-radius:8px;font-size:13px;min-height:38px;cursor:pointer}
+.header{background:#1a73e8;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.5px}
+.header .time{font-size:11px;color:rgba(255,255,255,.8);text-align:right;line-height:1.4}
 
-/* ── Status bar ── */
-.sub-bar{padding:7px 16px;text-align:center;font-size:12px;background:#1c1c2e;color:#888;border-bottom:1px solid #222}
+.summary{display:flex;gap:0;background:#fff;border-bottom:1px solid #e8e8e8}
+.summary .stat{flex:1;text-align:center;padding:12px 4px;border-right:1px solid #f0f0f0}
+.summary .stat:last-child{border-right:none}
+.summary .num{font-size:22px;font-weight:800;line-height:1.2}
+.summary .label{font-size:10px;color:#888;margin-top:2px}
+.num-green{color:#0d9b4a}
+.num-red{color:#d93025}
+.num-yellow{color:#e8a000}
+.num-gray{color:#999}
 
-/* ── Recommendation ── */
-.reco{padding:14px 16px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:12px}
-.reco .icon{font-size:26px;flex-shrink:0;line-height:1}
-.reco .text{flex:1}
-.reco .text .reason{font-weight:400;font-size:13px;opacity:.9;margin-top:4px;line-height:1.45}
-.reco.go{background:#145a2e;border-bottom:3px solid #27ae60}
-.reco.wait{background:#7d5700;color:#fff;border-bottom:3px solid #f0a500}
-.reco.wait_short{background:#7d3800;border-bottom:3px solid #e67e22}
+.reco{padding:12px 16px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e8e8e8}
+.reco.go{background:#e6f4ea;color:#137333}
+.reco.wait{background:#fef7e0;color:#7c5800}
+.reco .reason{font-weight:400;font-size:12px;margin-top:2px;opacity:.85}
 
-/* ── Filter bar ── */
-.bar{background:#1c1c2e;border-bottom:1px solid #222;position:sticky;top:0;z-index:50}
-.bar-main{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center}
-.bar-main::-webkit-scrollbar{display:none}
-.bar-extra{display:none;padding:0 12px 10px;gap:6px;flex-wrap:wrap;align-items:center}
-.bar-extra.open{display:flex}
-.bar select,.bar input{background:#0d2040;color:#e8e8e8;border:1px solid #2a3a58;border-radius:8px;padding:8px 10px;font-size:13px;min-height:40px;flex-shrink:0;cursor:pointer}
-.bar input{width:70px;text-align:center}
-.bar button{color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;min-height:40px;flex-shrink:0;cursor:pointer}
-.bar .btn-live{background:#c0392b}
-.bar .btn-auto{background:#2a2a3e;border:1px solid #333}
-.bar .btn-auto.on{background:#145a2e;border-color:#27ae60}
-.bar .btn-filter{background:#2a2a3e;border:1px solid #333;font-size:12px}
-.bar label{color:#888;font-size:12px;display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap}
+.airspace{padding:10px 16px;background:#fff;border-bottom:1px solid #e8e8e8}
+.airspace h3{font-size:11px;color:#888;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tag.closed{background:#fce8e6;color:#c5221f}
+.tag.open{background:#e6f4ea;color:#137333}
+.tag.restricted{background:#fef7e0;color:#7c5800}
 
-/* ── Sections ── */
-.section{padding:8px 14px}
-.section h2{font-size:11px;font-weight:700;color:#e94560;margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px}
+.airport-group{margin-top:10px}
+.airport-header{padding:10px 16px;background:#fff;border-bottom:1px solid #e8e8e8;display:flex;align-items:center;gap:8px}
+.airport-header .code{font-size:18px;font-weight:800;color:#1a73e8}
+.airport-header .name{font-size:13px;color:#555}
+.airport-header .count{margin-left:auto;font-size:11px;color:#888;background:#f0f0f0;padding:2px 8px;border-radius:10px}
 
-/* ── Airspace tags ── */
-.airspace{display:flex;flex-wrap:wrap;gap:5px}
-.tag{padding:5px 10px;border-radius:6px;font-size:12px;font-weight:700}
-.tag.closed{background:#7b241c;color:#f5b7b1}.tag.open{background:#145a2e;color:#a9dfbf}.tag.restricted{background:#7d5700;color:#fad7a0}
+.flight-card{background:#fff;margin:6px 10px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;border:1px solid #e8e8e8}
+.flight-card.changed{border-color:#d93025;box-shadow:0 0 0 2px rgba(217,48,37,.15)}
 
-/* ── Visa alerts ── */
-.visa-alert{background:#1c1c2e;border:1px solid #f39c12;border-radius:8px;padding:9px 12px;margin:4px 0;font-size:13px}
-.visa-alert.ok{border-color:#27ae60}.visa-alert.warn{border-color:#c0392b}
+.card-top{padding:12px 14px;cursor:pointer;user-select:none}
+.card-row1{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.flight-num{font-size:15px;font-weight:700;color:#1a1a1a}
+.airline-name{font-size:12px;color:#666}
+.status-badge{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;margin-left:auto;flex-shrink:0}
+.status-badge.operating,.status-badge.landed{background:#e6f4ea;color:#0d9b4a}
+.status-badge.scheduled{background:#e8f0fe;color:#1a73e8}
+.status-badge.cancelled{background:#fce8e6;color:#d93025}
+.status-badge.delayed{background:#fef7e0;color:#e8a000}
+.status-badge.unknown{background:#f0f0f0;color:#999}
 
-/* ── Route cards ── */
-.card{background:#1c1c2e;border-radius:14px;margin:0 12px 10px;border-left:4px solid #f39c12;box-shadow:0 2px 12px rgba(0,0,0,.4)}
-.card.high{border-color:#27ae60}.card.low{border-color:#c0392b}
-.card.changed{animation:pulse .6s 3}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 2px #e9456080}50%{box-shadow:0 0 0 5px #e9456030}}
+.card-row2{display:flex;align-items:center;font-size:13px;color:#444;gap:6px}
+.route-arrow{color:#999;font-size:11px}
+.card-row2 .time{color:#888;font-size:11px;margin-left:auto}
 
-.card-head{display:flex;align-items:center;padding:14px;cursor:pointer;gap:10px;min-height:68px;user-select:none}
-.card-head .rank{font-size:24px;font-weight:800;color:#e94560;min-width:34px}
-.card-head .info{flex:1;min-width:0}
-.card-head .name{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px;color:#f0f0f0}
-.card-head .badges{display:flex;gap:4px;flex-wrap:wrap}
-.card-head .meta{text-align:right;flex-shrink:0;padding-left:6px}
-.card-head .time{font-size:11px;color:#888;line-height:1.3}
-.card-head .time strong{font-size:22px;font-weight:800;color:#fff;display:block;line-height:1.1}
-.card-head .price{color:#2ecc71;font-size:14px;font-weight:700;margin-top:3px}
+.card-row3{display:flex;align-items:center;gap:4px;margin-top:8px}
+.history-label{font-size:10px;color:#999;flex-shrink:0}
+.history-dots{display:flex;gap:2px;flex-wrap:wrap}
+.dot{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+.dot.operating,.dot.landed{background:#0d9b4a}
+.dot.cancelled{background:#d93025}
+.dot.delayed{background:#e8a000}
+.dot.scheduled{background:#a8c7fa}
+.dot.unknown,.dot.none{background:#e0e0e0}
+.dot-date{font-size:8px;color:#999;text-align:center;line-height:1}
 
-/* ── Badges ── */
-.badge{padding:3px 7px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.2px}
-.badge.low-risk{background:#145a2e;color:#a9dfbf}
-.badge.med-risk{background:#7d5700;color:#fad7a0}
-.badge.high-risk{background:#7b241c;color:#f5b7b1}
-.badge.changed-badge{background:#e94560;color:#fff}
-.badge.seats-ok{background:#145a2e;color:#a9dfbf}
-.badge.seats-no{background:#7b241c;color:#f5b7b1}
-.badge.seats-unknown{background:#333;color:#888}
-.badge.over-budget{background:#7b241c;color:#f5b7b1}
+.card-row4{display:flex;align-items:center;gap:6px;margin-top:6px}
+.price{font-size:13px;font-weight:600;color:#0d9b4a}
+.days-badge{font-size:10px;color:#888;background:#f5f5f5;padding:2px 6px;border-radius:3px}
+.changed-badge{font-size:10px;font-weight:700;color:#d93025;background:#fce8e6;padding:2px 6px;border-radius:3px}
 
-/* ── Card body ── */
-.card-body{padding:0 14px 14px;display:none;font-size:13px;line-height:1.5}
-.card-body.open{display:block}
-.card-body .row{padding:8px 0;border-bottom:1px solid #232336;display:flex;justify-content:space-between;align-items:center}
-.card-body .label{color:#666;font-size:12px}
+.card-detail{display:none;padding:0 14px 14px;font-size:13px;border-top:1px solid #f0f0f0}
+.card-detail.open{display:block}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.detail-item{display:flex;flex-direction:column}
+.detail-item .dl{font-size:10px;color:#999;text-transform:uppercase}
+.detail-item .dv{font-size:13px;color:#333;font-weight:500}
 
-/* ── Flight leg ── */
-.leg{background:#0d1f3c;padding:12px;border-radius:10px;margin:6px 0;font-size:13px}
-.leg .fn{font-weight:700;font-size:15px}
-.leg .leg-badges{margin-top:8px;display:flex;gap:4px;flex-wrap:wrap}
-.status{padding:4px 8px;border-radius:5px;font-size:11px;font-weight:700;display:inline-block}
-.status.operating{background:#145a2e;color:#a9dfbf}
-.status.scheduled{background:#1a4a7a;color:#aed6f1}
-.status.cancelled{background:#7b241c;color:#f5b7b1}
-.status.unknown{background:#333;color:#888}
-.status.delayed{background:#7d5700;color:#fad7a0}
+.leg-connector{text-align:center;padding:6px 0;font-size:11px;color:#e8a000;font-weight:600}
 
-/* ── Book / Call buttons ── */
-.actions{display:flex;gap:8px;margin-top:10px}
-.actions a{flex:1;text-align:center;padding:13px 8px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;min-height:48px;display:flex;align-items:center;justify-content:center}
-.actions .book{background:#2ecc71;color:#000}
-.actions .call{background:#1a5276;color:#fff}
-.ground{background:#0d1f3c;padding:10px 12px;border-radius:8px;margin:6px 0;font-size:13px;color:#888}
+.detail-actions{display:flex;gap:8px;margin-top:12px}
+.detail-actions a{flex:1;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px}
+.btn-book{background:#1a73e8;color:#fff}
+.btn-call{background:#f0f0f0;color:#333}
 
-/* ── News ── */
-.news-item{background:#1c1c2e;border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px}
-.news-item .headline{font-weight:600;line-height:1.45;color:#f0f0f0}
-.news-item .meta{font-size:11px;color:#666;margin-top:5px}
-.news-item.high{border-left:3px solid #e94560}
-.news-item.medium{border-left:3px solid #f39c12}
-.airspace-alert{border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;font-weight:600}
-.airspace-alert{background:#7b241c;color:#f5b7b1}
-.airspace-alert.reopen{background:#145a2e;color:#a9dfbf}
+.visa-note{margin-top:8px;padding:8px 10px;border-radius:6px;font-size:12px;border-left:3px solid #e8a000;background:#fffbeb}
+.visa-note.ok{border-color:#0d9b4a;background:#f0faf4}
 
-/* ── Community ── */
-.report{background:#1c1c2e;border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;line-height:1.5}
+.wa-section{margin:10px;padding:16px;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid #e8e8e8}
+.wa-section h3{font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.wa-input-row{display:flex;gap:8px}
+.wa-input-row input{flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;min-height:44px}
+.wa-input-row button{padding:10px 16px;border:none;border-radius:8px;font-weight:700;font-size:13px;color:#fff;background:#25d366;cursor:pointer;min-height:44px;flex-shrink:0}
+.wa-result{margin-top:8px;font-size:12px}
+.wa-steps{font-size:12px;color:#666;line-height:1.8;margin-top:10px;padding-left:16px}
 
-/* ── Tabs ── */
-.tabs{display:flex;background:#1c1c2e;border-top:1px solid #222;border-bottom:1px solid #222;margin-top:8px;position:sticky;top:57px;z-index:40}
-.tab{flex:1;text-align:center;padding:8px 2px 9px;font-size:10px;font-weight:600;color:#555;border-bottom:3px solid transparent;cursor:pointer;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;user-select:none;transition:color .15s}
-.tab-icon{font-size:18px;line-height:1}
-.tab.active{color:#e94560;border-color:#e94560;background:#20203a}
-.tab-content{display:none}
-.tab-content.active{display:block}
+.footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e0e0e0;padding:8px 16px;padding-bottom:calc(8px + env(safe-area-inset-bottom));z-index:60;display:flex;justify-content:space-between;align-items:center}
+.footer-bar .info{font-size:11px;color:#999}
+.footer-bar button{background:#1a73e8;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;min-height:40px;cursor:pointer}
 
-/* ── Steps ── */
-.steps{padding:10px 16px}
-.steps li{margin-bottom:10px;padding-left:4px;font-size:14px;line-height:1.5}
+.filter-bar{background:#fff;border-bottom:1px solid #e8e8e8;padding:8px 12px;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;position:sticky;top:0;z-index:50}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-bar select{background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;padding:7px 10px;font-size:12px;min-height:36px;cursor:pointer}
+.filter-bar button{border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;min-height:36px;cursor:pointer;flex-shrink:0}
+.btn-live{background:#1a73e8;color:#fff}
+.btn-auto{background:#f0f0f0;color:#555;border:1px solid #ddd}
+.btn-auto.on{background:#e6f4ea;color:#0d9b4a;border-color:#0d9b4a}
 
-/* ── Warning ── */
-.warn{padding:10px 16px;font-size:12px;text-align:center;font-weight:600;background:#7d5700;color:#fad7a0}
+.empty{text-align:center;padding:40px 16px;color:#999;font-size:13px}
+.warn{padding:8px 16px;font-size:11px;text-align:center;color:#888;background:#fef7e0;border-bottom:1px solid #e8e8e8}
 
-/* ── Bottom refresh bar ── */
-.refresh-bar{position:fixed;bottom:0;left:0;right:0;background:#1c1c2e;border-top:1px solid #2a2a3e;padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom));z-index:60;display:flex;justify-content:space-between;align-items:center}
-.refresh-bar .timer{font-size:12px;color:#666}
-.refresh-bar button{background:#c0392b;color:#fff;border:none;padding:10px 22px;border-radius:10px;font-weight:700;font-size:14px;min-height:44px;cursor:pointer}
-
-/* ── Misc ── */
-.loading,.empty{text-align:center;padding:28px 16px;color:#555;font-size:13px}
-.insight{background:#1c1c2e;border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;border-left:3px solid #1a5276;line-height:1.5}
-.insight.trend_up{border-color:#27ae60}
-.insight.trend_down{border-color:#c0392b}
-.insight.stable{border-color:#2ecc71}
-
-/* ── Alerts tab cards ── */
-.alert-card{background:#1c1c2e;border-radius:12px;padding:14px;margin-bottom:10px}
+.section-title{padding:10px 16px 4px;font-size:11px;font-weight:700;color:#888;letter-spacing:.5px}
 </style>
 </head>
 <body>
 
-<div class="top">
-  <h1 id="titleText">EMERGENCY FLIGHT FINDER</h1>
-  <select class="lang" id="langSelect" onchange="switchLang(this.value)">
-    <option value="en">EN</option>
-    <option value="zh">中文</option>
-    <option value="ar">عربي</option>
-  </select>
+<div class="header">
+  <h1>沙特回国航班监控</h1>
+  <div class="time" id="headerTime">加载中...</div>
 </div>
-<div class="sub-bar" id="updated">Loading...</div>
+
+<div class="summary" id="summaryBar">
+  <div class="stat"><div class="num num-green" id="countOk">-</div><div class="label">正常运营</div></div>
+  <div class="stat"><div class="num num-red" id="countCancel">-</div><div class="label">已取消</div></div>
+  <div class="stat"><div class="num num-yellow" id="countDelay">-</div><div class="label">延误</div></div>
+  <div class="stat"><div class="num num-gray" id="countTotal">-</div><div class="label">总航班</div></div>
+</div>
 
 <div id="recoSection"></div>
 
-<div class="bar">
-  <div class="bar-main">
-    <select id="speed" title="Speed priority">
-      <option value="balanced" id="opt_balanced">Balanced</option>
-      <option value="soonest" id="opt_soonest">Soonest</option>
-      <option value="shortest_total" id="opt_shortest">Shortest</option>
-    </select>
-    <select id="sortBy" title="Sort by">
-      <option value="score" id="opt_best">Best score</option>
-      <option value="depart" id="opt_depart">Departure</option>
-      <option value="price" id="opt_price">Price</option>
-      <option value="duration" id="opt_dur">Duration</option>
-    </select>
-    <select id="maxStops" title="Flight connections">
-      <option value="3" id="opt_any">Any stops</option>
-      <option value="1" id="opt_1conn">1 connection</option>
-      <option value="0" id="opt_nonstop">Nonstop</option>
-    </select>
-    <button class="btn-filter" onclick="toggleFilters()" id="btn_filter">⚙ More</button>
-    <button class="btn-live" onclick="loadData(true)" id="btn_live">⟳ Live</button>
-    <button class="btn-auto" id="autoBtn" onclick="toggleAuto()">Auto: OFF</button>
+<div class="filter-bar">
+  <select id="sortBy">
+    <option value="score">综合排序</option>
+    <option value="depart">按出发时间</option>
+    <option value="price">按价格</option>
+    <option value="duration">按飞行时长</option>
+  </select>
+  <select id="maxStops">
+    <option value="3">不限中转</option>
+    <option value="1">最多1次中转</option>
+    <option value="0">仅直飞</option>
+  </select>
+  <button class="btn-live" onclick="loadData(true)">实时刷新</button>
+  <button class="btn-auto" id="autoBtn" onclick="toggleAuto()">自动:关</button>
+</div>
+
+<div id="airspaceSection" class="airspace" style="display:none"></div>
+
+<div id="flightsContainer"><div class="empty">正在加载航班数据...</div></div>
+
+<div class="section-title">WhatsApp 实时通知</div>
+<div class="wa-section">
+  <h3>💬 航班变化通知</h3>
+  <p style="font-size:12px;color:#666;margin-bottom:10px">航班取消、延误、恢复运营或价格变动时，第一时间通过WhatsApp通知您。</p>
+  <ol class="wa-steps">
+    <li>打开WhatsApp，发送 <strong style="color:#25d366;background:#f0faf4;padding:1px 4px;border-radius:3px">join spoken-yet</strong> 到 <strong>+1 (415) 523-8886</strong></li>
+    <li>等待Twilio确认回复</li>
+    <li>在下方输入您的手机号并订阅</li>
+  </ol>
+  <div class="wa-input-row" style="margin-top:10px">
+    <input type="tel" id="waPhone" placeholder="+8613812345678">
+    <button onclick="testWA()">测试</button>
+    <button onclick="subscribeWA()" style="background:#1a73e8">订阅</button>
   </div>
-  <div class="bar-extra" id="barExtra">
-    <label><span id="lbl_pax">Passengers</span><input id="passengers" type="number" min="1" max="9" value="1"></label>
-    <label><span id="lbl_budget">Budget $</span><input id="budget" type="number" min="500" max="50000" step="500" value="10000"></label>
-  </div>
+  <div class="wa-result" id="waResult"></div>
 </div>
 
-<div id="airspaceSection" class="section"></div>
-<div id="visaSection" class="section" style="display:none"></div>
-<div id="escapeSection" class="section" style="display:none"></div>
-<div id="routesContainer"><div class="loading" id="routesLoading">Loading routes...</div></div>
+<div class="warn">航班信息变化迅速，请务必与航空公司确认。数据来源：FlightRadar24</div>
 
-<div class="tabs">
-  <div class="tab active" onclick="showTab('plan')"><span class="tab-icon">📋</span><span id="tab_plan_label">Plan</span></div>
-  <div class="tab" onclick="showTab('news')"><span class="tab-icon">📰</span><span id="tab_news_label">News</span></div>
-  <div class="tab" onclick="showTab('community')"><span class="tab-icon">🏛️</span><span id="tab_community_label">Advisories</span></div>
-  <div class="tab" onclick="showTab('intel')"><span class="tab-icon">📡</span><span id="tab_intel_label">Intel</span></div>
-  <div class="tab" onclick="showTab('alerts')"><span class="tab-icon">🔔</span><span id="tab_alerts_label">Alerts</span></div>
-</div>
-
-<div id="tab-plan" class="tab-content active">
-  <div class="steps section">
-    <ol id="stepsList"></ol>
-  </div>
-</div>
-
-<div id="tab-news" class="tab-content">
-  <div class="section" id="newsSection"><div class="empty">Loading news...</div></div>
-</div>
-
-<div id="tab-community" class="tab-content">
-  <div class="section" id="crowdsourceSection"><div class="empty">Loading advisories...</div></div>
-  <!-- Community reports and ride sharing hidden until real users are active -->
-</div>
-
-<div id="tab-intel" class="tab-content">
-  <div class="section" id="notamsSection"><div class="empty" id="notamsPlaceholder">Loading NOTAMs...</div></div>
-  <div class="section" id="patternsSection"><div class="empty">Collecting data...</div></div>
-  <div class="section" id="historySection"></div>
-</div>
-
-<div id="tab-alerts" class="tab-content">
-  <div class="section">
-    <h2 id="alerts_title">Get Notified</h2>
-    <div class="alert-card" style="border-left:3px solid #27ae60">
-      <div style="font-size:14px;font-weight:700;margin-bottom:8px" id="alerts_what_title">📬 What you'll receive</div>
-      <ul style="font-size:13px;padding-left:18px;color:#ccc;line-height:1.8">
-        <li id="alert_item_1">Flight status changes (cancelled, delayed, operating)</li>
-        <li id="alert_item_2">Price drops or increases &gt; $50</li>
-        <li id="alert_item_3">New routes becoming available</li>
-        <li id="alert_item_4">Routes disappearing or sold out</li>
-        <li id="alert_item_5">Airspace reopening / closure alerts</li>
-      </ul>
-    </div>
-
-    <div class="alert-card" style="border-left:3px solid #25d366">
-      <div style="font-size:14px;font-weight:700;margin-bottom:10px" id="alerts_setup_title">💬 Setup WhatsApp Alerts</div>
-      <ol style="font-size:13px;padding-left:18px;color:#ccc;line-height:2">
-        <li id="alerts_step_1">Open WhatsApp on your phone</li>
-        <li id="alerts_step_2">Send <strong style="color:#2ecc71;background:#0d2040;padding:2px 6px;border-radius:4px;user-select:all">join spoken-yet</strong> to <strong style="color:#fff">+1 (415) 523-8886</strong></li>
-        <li id="alerts_step_3">Wait for confirmation reply from Twilio</li>
-        <li id="alerts_step_4">Contact the operator to register your number</li>
-      </ol>
-      <div style="margin-top:8px;font-size:12px;color:#666" id="alerts_note">Note: Twilio sandbox — must complete step 2 first.</div>
-    </div>
-  </div>
-</div>
-
-<div class="warn" id="warnText">Flight data changes rapidly during conflict. Always confirm with the airline.</div>
-
-<div class="refresh-bar">
-  <span class="timer" id="timer">—</span>
-  <button onclick="loadData(true)" id="btn_refresh">Refresh Now</button>
+<div class="footer-bar">
+  <span class="info" id="footerInfo">—</span>
+  <button onclick="loadData(true)">刷新</button>
 </div>
 
 <script>
 const API = '/api';
-let autoRefresh = false, countdown = 0, countdownTimer = null, currentLang = 'en', T = {};
+let autoRefresh = false, countdown = 0, countdownTimer = null;
+
+const STATUS_CN = {
+  operating: '正常运营', scheduled: '已计划', cancelled: '已取消',
+  delayed: '延误', unknown: '未知', landed: '已降落',
+};
 
 function qs(id) { return document.getElementById(id); }
-function t(key, fallback) { return T[key] || fallback || key; }
-
-function translateConfidence(c) {
-  if (!c) return '';
-  const key = c + '_confidence';
-  return t(key, c + ' ' + t('confidence', 'confidence'));
-}
-
-function translateVisaNotes(hub, originalNotes) {
-  if (T.visa_notes && T.visa_notes[hub]) return T.visa_notes[hub];
-  return originalNotes;
-}
 
 async function loadData(live) {
-  const speed = qs('speed').value, sort = qs('sortBy').value, stops = qs('maxStops').value;
-  const pax = qs('passengers').value || 1, budg = qs('budget').value || 10000;
-  const url = `${API}/routes?speed=${speed}&sort_by=${sort}&max_stops=${stops}&live=${!!live}&passengers=${pax}&budget=${budg}`;
-  qs('timer').textContent = t('loading', 'Loading...');
+  const sort = qs('sortBy').value, stops = qs('maxStops').value;
+  const url = `${API}/routes?sort_by=${sort}&max_stops=${stops}&live=${!!live}`;
+  qs('footerInfo').textContent = '加载中...';
   try {
-    const [routeRes, newsRes, crowdRes] = await Promise.all([
-      fetch(url),
-      fetch(`${API}/news`).catch(() => null),
-      fetch(`${API}/crowdsource`).catch(() => null),
-    ]);
-    const data = await routeRes.json();
+    const res = await fetch(url);
+    const data = await res.json();
     render(data);
-    if (newsRes && newsRes.ok) renderNews(await newsRes.json());
-    if (crowdRes && crowdRes.ok) renderCrowdsource(await crowdRes.json());
-    qs('timer').textContent = live ? t('live_loaded', 'Live data loaded') : t('cached_data', 'Cached data');
+    qs('footerInfo').textContent = live ? '已加载实时数据' : '缓存数据';
     if (autoRefresh) startCountdown(120);
   } catch (e) {
-    qs('timer').textContent = t('offline_cached', 'OFFLINE — using cached data');
+    qs('footerInfo').textContent = '加载失败，使用缓存数据';
   }
 }
 
 function render(data) {
-  qs('updated').textContent = data.updated_ast + '  |  ' + data.scenario;
+  qs('headerTime').innerHTML = data.updated_cst + '<br>' + data.updated_ast;
 
+  // Recommendation
   const rec = data.recommendation;
   if (rec) {
-    const cls = rec.action === 'go_now' ? 'go' : rec.action === 'wait' ? 'wait' : 'wait_short';
-    const icon = rec.action === 'go_now' ? '✈️' : rec.action === 'wait' ? '⏳' : '⚠️';
-    const actionLabel = rec.action === 'go_now' ? t('go_now','GO NOW') : t('wait','WAIT');
-    const confLabel = translateConfidence(rec.confidence);
+    const cls = rec.action === 'go_now' ? 'go' : 'wait';
+    const label = rec.action === 'go_now' ? '建议立即行动' : '建议观望等待';
     qs('recoSection').innerHTML = `<div class="reco ${cls}">
-      <span class="icon">${icon}</span>
-      <div class="text">${actionLabel} — ${confLabel}<div class="reason">${rec.reason}</div></div></div>`;
+      <span>${rec.action === 'go_now' ? '✈️' : '⏳'}</span>
+      <div><strong>${label}</strong><div class="reason">${rec.reason}</div></div></div>`;
   }
 
-  let air = '<h2>' + t('airspace','Airspace') + '</h2><div class="airspace">';
-  data.airspace.closed.forEach(c => air += `<span class="tag closed">${c}</span>`);
-  data.airspace.restricted.forEach(c => air += `<span class="tag restricted">${c}</span>`);
-  data.airspace.open.forEach(c => air += `<span class="tag open">${c}</span>`);
-  air += '</div>';
-  qs('airspaceSection').innerHTML = air;
-
-  if (data.visa_checks && data.visa_checks.length) {
-    let vHtml = '<h2>' + t('transit_visa','Transit Visa') + '</h2>';
-    data.visa_checks.forEach(v => {
-      const cls = v.visa_required === false ? 'ok' : v.visa_required === true ? 'warn' : '';
-      const label = v.visa_required === false ? t('no_visa','NO VISA NEEDED')
-        : v.visa_required === true ? t('visa_required','VISA REQUIRED')
-        : t('check_manually','CHECK MANUALLY');
-      const notes = translateVisaNotes(v.hub, v.notes);
-      vHtml += `<div class="visa-alert ${cls}"><strong>${v.hub}</strong>: ${label} — ${notes}</div>`;
-    });
-    qs('visaSection').innerHTML = vHtml;
-    qs('visaSection').style.display = 'block';
+  // Airspace
+  if (data.airspace) {
+    let h = '<h3>空域状态</h3><div class="tags">';
+    data.airspace.closed.forEach(c => h += `<span class="tag closed">${c} 关闭</span>`);
+    data.airspace.restricted.forEach(c => h += `<span class="tag restricted">${c} 受限</span>`);
+    data.airspace.open.forEach(c => h += `<span class="tag open">${c}</span>`);
+    h += '</div>';
+    qs('airspaceSection').innerHTML = h;
+    qs('airspaceSection').style.display = '';
   }
 
-  if (data.escape_routes && data.escape_routes.length) {
-    let esc = '<h2>' + t('ground_escape','Ground Escape') + '</h2><div class="airspace">';
-    data.escape_routes.forEach(e => {
-      const st = e.status === 'likely_open' ? 'open' : e.status === 'closed' ? 'closed' : 'restricted';
-      esc += `<span class="tag ${st}" style="margin:2px">${e.from} → ${e.to} (${e.hours}h)</span>`;
-    });
-    esc += '</div>';
-    qs('escapeSection').innerHTML = esc;
-    qs('escapeSection').style.display = 'block';
-  }
+  // Count flights by status and group by origin airport
+  const airports = data.airports || [];
+  const airportMap = {};
+  airports.forEach(a => airportMap[a.code] = a);
 
-  let html = '';
-  data.routes.forEach((r, i) => {
-    const rank = i + 1;
-    const rel = r.reliability === 'high' ? 'high' : r.reliability === 'low' ? 'low' : '';
-    const changed = r.changed ? 'changed' : '';
-    const price = r.price_economy ? `$${r.price_economy.toLocaleString()}` : '—';
+  const routesByOrigin = {};
+  let cOk = 0, cCancel = 0, cDelay = 0, cTotal = 0;
 
-    let badges = '';
-    if (r.risk === 'low') {
-      badges += `<span class="badge low-risk" title="${t('low_risk_tip','Route avoids conflict zones')}">${t('low_risk','SAFE ROUTE')}</span>`;
-    } else if (r.risk === 'high') {
-      badges += `<span class="badge high-risk" title="${t('high_risk_tip','Route crosses active conflict airspace')}">${t('high_risk','CONFLICT ZONE')}</span>`;
-    } else {
-      badges += `<span class="badge med-risk" title="${t('med_risk_tip','Route passes near active conflict area')}">${t('med_risk','NEAR CONFLICT')}</span>`;
+  // Deduplicate flights for counting (same flight_number counted once)
+  const countedFlights = new Set();
+
+  data.routes.forEach(r => {
+    if (!r.legs || !r.legs.length) return;
+    const firstLeg = r.legs[0];
+    const originCode = firstLeg.from;
+
+    // Count unique flights by first leg
+    if (!countedFlights.has(firstLeg.flight)) {
+      countedFlights.add(firstLeg.flight);
+      cTotal++;
+      if (firstLeg.status === 'operating' || firstLeg.status === 'landed') cOk++;
+      else if (firstLeg.status === 'cancelled') cCancel++;
+      else if (firstLeg.status === 'delayed') cDelay++;
     }
 
-    const legSeats = (r.legs || []).map(l => l.seats_available);
-    const allOk = legSeats.length > 0 && legSeats.every(s => s === true);
-    const anySold = legSeats.some(s => s === false);
-    if (allOk) badges += `<span class="badge seats-ok">${t('seats_ok','SEATS OK')}</span>`;
-    else if (anySold) badges += `<span class="badge seats-no">${t('sold_out','SOLD OUT')}</span>`;
-    else badges += `<span class="badge seats-unknown">${t('seats_unknown','SEATS ?')}</span>`;
+    if (!routesByOrigin[originCode]) routesByOrigin[originCode] = [];
+    routesByOrigin[originCode].push(r);
+  });
 
-    if (r.over_budget) badges += `<span class="badge over-budget">${t('over_budget','OVER BUDGET')}</span>`;
-    if (r.changed) badges += `<span class="badge changed-badge">${t('changed','CHANGED')}</span>`;
+  qs('countOk').textContent = cOk;
+  qs('countCancel').textContent = cCancel;
+  qs('countDelay').textContent = cDelay;
+  qs('countTotal').textContent = cTotal;
 
-    const arriveIn = r.arrive_label || r.arrive_cst || '';
+  // Render grouped by airport
+  const airportOrder = ['RUH', 'JED', 'DMM'];
+  const otherOrigins = Object.keys(routesByOrigin).filter(k => !airportOrder.includes(k));
+  const allOrigins = [...airportOrder.filter(k => routesByOrigin[k]), ...otherOrigins];
 
-    html += `<div class="card ${rel} ${changed}" onclick="toggle(this)">
-      <div class="card-head">
-        <span class="rank">#${rank}</span>
-        <div class="info">
-          <div class="name">${r.name}</div>
-          <div class="badges">${badges}</div>
-        </div>
-        <div class="meta">
-          <div class="time" style="font-size:11px">${t('arrive_in','Arrive in')}<br><strong>${Math.round(r.total_hours)}h</strong></div>
-          <div class="price">${price}</div>
-        </div>
-      </div>
-      <div class="card-body">
-        <div style="background:#0f3460;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:#aaa">
-          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-            <span>${t('first_flight','First flight departs')}</span><span style="color:#eee">${r.depart_ast || '—'}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-            <span>${t('land_at','Land at destination')}</span><span style="color:#2ecc71;font-weight:700">${arriveIn}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between">
-            <span>${t('wait_until','Wait until departure')}</span><span style="color:#f39c12">${r.wait_hours}h ${t('from_now','from now')}</span>
-          </div>
-        </div>
+  let html = '';
+  allOrigins.forEach(code => {
+    const routes = routesByOrigin[code] || [];
+    const info = airportMap[code] || {};
+    const cityName = {'RUH':'利雅得','JED':'吉达','DMM':'达曼'}[code] || info.city || code;
 
-        <div style="font-size:9px;color:#666;margin-bottom:4px;text-transform:uppercase;font-weight:600">${t('journey_breakdown','Journey breakdown')}</div>
+    html += `<div class="airport-group">
+      <div class="airport-header">
+        <span class="code">${code}</span>
+        <span class="name">${cityName} ${info.name || ''}</span>
+        <span class="count">${routes.length}个航班</span>
+      </div>`;
 
-        ${r.ground.map(g => `<div class="ground">⬤ ${t('ground','Ground')}: ${g.from} → ${g.to} via ${g.via} <strong>(~${g.hours}h)</strong></div>`).join('')}
+    routes.forEach(r => {
+      html += renderFlightCard(r, data.conflict_start);
+    });
 
-        ${(() => {
-          const pax = qs('passengers').value || 1;
-          const airlines = [...new Set(r.legs.map(l => l.airline))];
-          const sameAirline = airlines.length === 1 && r.legs.length > 1;
-          const fullRoute = r.legs.map(l => l.from).concat([r.legs[r.legs.length-1].to]).join(' to ');
-          const gfAllUrl = `https://www.google.com/travel/flights?q=${encodeURIComponent('Flights from '+fullRoute+' one way '+pax+' passenger')}&curr=USD`;
+    html += '</div>';
+  });
 
-          let combinedBookHtml = '';
-          if (sameAirline) {
-            const airlineUrl = r.legs[0].booking_url || gfAllUrl;
-            const contact = r.legs[0].contact;
-            const flightNums = r.legs.map(l => l.flight).join('+');
-            combinedBookHtml = `<div class="actions" style="margin-bottom:6px">
-              <a class="book" href="${airlineUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:12px;padding:10px">${t('book_now','BOOK')} ${flightNums} (${airlines[0]})</a>
-              ${contact ? `<a class="call" href="tel:${contact.replace(/[^+0-9]/g,'')}" onclick="event.stopPropagation()">${t('call','CALL')} ${contact}</a>` : ''}
-            </div>`;
-          } else if (r.legs.length > 1) {
-            combinedBookHtml = `<div class="actions" style="margin-bottom:6px">
-              <a class="book" href="${gfAllUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:12px;padding:10px;background:#3498db">${t('search_all','Search full trip on Google Flights')}</a>
-            </div>`;
-          }
+  if (!html) html = '<div class="empty">暂无航班数据</div>';
+  qs('flightsContainer').innerHTML = html;
 
-          return combinedBookHtml + r.legs.map((l, li) => {
-            let lb = '';
-            if (l.seats_available === true) lb += `<span class="badge seats-ok">${t('seats_ok','SEATS OK')}</span>`;
-            else if (l.seats_available === false) lb += `<span class="badge seats-no">${t('sold_out','SOLD OUT')}</span>`;
-            else lb += `<span class="badge seats-unknown">${t('seats_unknown','SEATS ?')}</span>`;
-            if (l.over_budget) lb += `<span class="badge over-budget">${t('over_budget','OVER BUDGET')}</span>`;
-            if (l.price_economy) lb += `<span class="badge" style="background:#2ecc71;color:#000">$${l.price_economy.toLocaleString()}</span>`;
-            if (l.price_source) lb += `<span class="badge" style="background:#555">via ${l.price_source}</span>`;
+  if (data.routes.some(r => r.changed)) {
+    try { navigator.vibrate?.(200); } catch(e) {}
+  }
+}
 
-            let connHtml = '';
-            if (l.layover_before != null) {
-              connHtml = `<div style="text-align:center;padding:4px 0;font-size:10px;color:#f39c12;font-weight:600;border-left:2px dashed #f39c12;margin-left:20px;padding-left:8px">⏳ ${t('wait_in','Wait in')} ${l.from}: <strong>${l.layover_before}h</strong></div>`;
-            }
+function renderFlightCard(route, conflictStart) {
+  const legs = route.legs || [];
+  if (!legs.length) return '';
+  const firstLeg = legs[0];
+  const lastLeg = legs[legs.length - 1];
+  const isMultiLeg = legs.length > 1;
+  const changed = route.changed ? 'changed' : '';
 
-            const gfUrl = `https://www.google.com/travel/flights?q=${encodeURIComponent('Flights from '+l.from+' to '+l.to+' one way '+pax+' passenger')}&curr=USD`;
-            const bookUrl = l.booking_url || gfUrl;
+  // Build route string
+  let routeStr = firstLeg.from;
+  if (isMultiLeg) {
+    legs.forEach((l, i) => {
+      if (i > 0) routeStr += ` → ${l.from}`;
+    });
+  }
+  routeStr += ` → ${lastLeg.to}`;
 
-            let legBookHtml = '';
-            if (!sameAirline) {
-              let callHtml = '';
-              if (l.contact) callHtml = `<a class="call" href="tel:${l.contact.replace(/[^+0-9]/g,'')}" onclick="event.stopPropagation()" style="font-size:10px;padding:6px 8px;min-height:0">${t('call','CALL')} ${l.contact}</a>`;
-              legBookHtml = `<div class="actions" style="margin-top:4px">
-                <a class="book" href="${bookUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:11px;padding:8px;min-height:0">${t('book_now','BOOK')} ${l.flight}</a>
-                ${callHtml}
-              </div>`;
-            }
+  const flightNums = legs.map(l => l.flight).join(' + ');
+  const airlines = [...new Set(legs.map(l => l.airline))].join(' / ');
 
-            return connHtml + `<div class="leg">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <span><span class="fn">${l.flight}</span> ${l.airline}</span>
-                <span class="status ${l.status}">${l.status.toUpperCase()}</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:12px">
-                <div>
-                  <strong style="font-size:13px">${l.from}</strong><br>
-                  <span style="color:#888;font-size:9px">${t('takeoff','Takeoff')}</span><br>
-                  <span style="color:#eee">${l.depart_local || l.depart_utc || '—'}</span>
-                </div>
-                <div style="text-align:center;color:#888;font-size:10px;align-self:center">→ ${l.duration}h →<br><span style="font-size:9px">${l.aircraft}</span></div>
-                <div style="text-align:right">
-                  <strong style="font-size:13px">${l.to}</strong><br>
-                  <span style="color:#888;font-size:9px">${t('landing','Landing')}</span><br>
-                  <span style="color:#eee">${l.arrive_local || l.arrive_utc || '—'}</span>
-                </div>
-              </div>
-              <div class="leg-badges">${lb}</div>
-              ${legBookHtml}
-            </div>`;
-          }).join('');
-        })()}
+  // Overall status (worst of all legs)
+  const statusPriority = {cancelled:0, delayed:1, unknown:2, scheduled:3, operating:4, landed:5};
+  let worstStatus = 'operating';
+  legs.forEach(l => {
+    if ((statusPriority[l.status] || 2) < (statusPriority[worstStatus] || 2)) worstStatus = l.status;
+  });
 
-        <div style="margin-top:6px;padding:4px 0;border-top:1px solid #333">
-          <div class="row"><span class="label">${t('economy','Economy total')}</span><span>${r.price_economy ? '$'+r.price_economy.toLocaleString() : '—'}</span></div>
-          <div class="row"><span class="label">${t('business','Business total')}</span><span>${r.price_business ? '$'+r.price_business.toLocaleString() : '—'}</span></div>
-          <div class="row" title="${t('score_tip','wait×1.5 + ground + flight + layover×0.8 + conflict penalty')}"><span class="label">${t('score','Score')}</span><span>${r.score} (${t('lower_better','lower = faster escape')})</span></div>
-        </div>
-        ${r.notes ? `<div style="color:#888;margin-top:8px;font-size:12px">${r.notes}</div>` : ''}
-      </div>
+  // History dots for first leg (primary flight)
+  let dotsHtml = '';
+  const history = firstLeg.history || {};
+  const dates = Object.keys(history).sort();
+  if (dates.length > 0) {
+    dotsHtml = '<div class="card-row3"><span class="history-label">历史:</span><div class="history-dots">';
+    dates.forEach(d => {
+      const s = history[d] || 'none';
+      const dateLabel = d.slice(5); // MM-DD
+      dotsHtml += `<div style="display:flex;flex-direction:column;align-items:center;gap:1px" title="${d}: ${STATUS_CN[s]||s}"><div class="dot ${s}"></div><div class="dot-date">${dateLabel}</div></div>`;
+    });
+    dotsHtml += '</div></div>';
+  }
+
+  // Price
+  const priceStr = route.price_economy ? `¥${Math.round(route.price_economy * 7.2).toLocaleString()} / $${route.price_economy.toLocaleString()}` : '';
+
+  // Schedule days
+  const days = firstLeg.days || [];
+  const dayStr = days.includes('daily') ? '每日' : days.join('/');
+
+  let cardId = 'card_' + flightNums.replace(/[^a-zA-Z0-9]/g, '_');
+
+  let detailHtml = '<div class="card-detail" id="' + cardId + '">';
+
+  legs.forEach((l, li) => {
+    if (li > 0 && l.layover_before != null) {
+      detailHtml += `<div class="leg-connector">⏳ 在 ${l.from} 中转等待 ${l.layover_before}小时</div>`;
+    }
+    detailHtml += `<div class="detail-grid">
+      <div class="detail-item"><span class="dl">航班</span><span class="dv">${l.flight} ${l.airline}</span></div>
+      <div class="detail-item"><span class="dl">机型</span><span class="dv">${l.aircraft || '—'}</span></div>
+      <div class="detail-item"><span class="dl">起飞</span><span class="dv">${l.from} ${l.depart_local || l.depart_utc || '—'}</span></div>
+      <div class="detail-item"><span class="dl">降落</span><span class="dv">${l.to} ${l.arrive_local || l.arrive_utc || '—'}</span></div>
+      <div class="detail-item"><span class="dl">飞行时间</span><span class="dv">${l.duration}小时</span></div>
+      <div class="detail-item"><span class="dl">状态</span><span class="dv"><span class="status-badge ${l.status}">${STATUS_CN[l.status]||l.status}</span></span></div>
+    </div>`;
+
+    if (l.price_economy) {
+      detailHtml += `<div style="margin-top:6px;font-size:12px;color:#666">经济舱 $${l.price_economy} · 商务舱 $${l.price_business || '—'}</div>`;
+    }
+
+    const bookUrl = l.booking_url || `https://www.google.com/travel/flights?q=${encodeURIComponent(l.from+' to '+l.to+' one way')}&curr=USD`;
+    detailHtml += `<div class="detail-actions">
+      <a class="btn-book" href="${bookUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">预订 ${l.flight}</a>
+      ${l.contact ? `<a class="btn-call" href="tel:${l.contact.replace(/[^+0-9]/g,'')}" onclick="event.stopPropagation()">拨打 ${l.contact}</a>` : ''}
     </div>`;
   });
-  qs('routesContainer').innerHTML = html;
 
-  if (data.patterns && data.patterns.length) {
-    let pHtml = '<h2>' + t('trend_analysis','Trend Analysis') + '</h2>';
-    data.patterns.forEach(p => {
-      pHtml += `<div class="insight ${p.type||''}">${p.message}${p.confidence ? ' <span style="opacity:.6">('+translateConfidence(p.confidence)+')</span>' : ''}</div>`;
-    });
-    qs('patternsSection').innerHTML = pHtml;
-  }
+  detailHtml += '</div>';
 
-  qs('stepsList').innerHTML = `
-    <li>${t('step_1','Cross to Saudi via King Fahd Causeway')}</li>
-    <li>${t('step_2','Fly Dammam → Riyadh (~1h15m) or drive (~4h)')}</li>
-    <li>${t('step_3','Call airline to confirm flight is operating')}</li>
-    <li>${t('step_4','Book fastest CONFIRMED option')}</li>
-    <li>${t('step_5','Backup: Turkish Airlines via Istanbul (daily)')}</li>
-    <li>${t('step_6','Passport + cash (SAR & USD) + phone charger')}</li>`;
-
-  qs('warnText').textContent = t('confirm_airline', 'Flight data changes rapidly during conflict. Always confirm with the airline.');
-
-  if (data.routes.some(r => r.changed)) { try { navigator.vibrate?.(200); } catch(e) {} }
+  return `<div class="flight-card ${changed}" onclick="toggleCard('${cardId}')">
+    <div class="card-top">
+      <div class="card-row1">
+        <span class="flight-num">${flightNums}</span>
+        <span class="airline-name">${airlines}</span>
+        <span class="status-badge ${worstStatus}">${STATUS_CN[worstStatus]||worstStatus}</span>
+      </div>
+      <div class="card-row2">
+        <span>${routeStr}</span>
+        <span class="route-arrow">·</span>
+        <span>${route.flight_hours}h${isMultiLeg ? ' · '+route.num_stops+'转' : ' 直飞'}</span>
+        <span class="time">${firstLeg.depart_local || firstLeg.depart_utc || ''}</span>
+      </div>
+      ${dotsHtml}
+      <div class="card-row4">
+        ${priceStr ? `<span class="price">${priceStr}</span>` : ''}
+        ${dayStr ? `<span class="days-badge">${dayStr}</span>` : ''}
+        ${route.changed ? '<span class="changed-badge">状态变更!</span>' : ''}
+      </div>
+    </div>
+    ${detailHtml}
+  </div>`;
 }
 
-function renderNews(data) {
-  let html = '<h2>' + t('conflict_news','Conflict News') + '</h2>';
-  if (data.airspace_alerts && data.airspace_alerts.length) {
-    data.airspace_alerts.forEach(a => {
-      const cls = a.type === 'potential_reopening' ? 'reopen' : '';
-      const label = a.type === 'potential_reopening' ? t('possible_reopening','POSSIBLE REOPENING') : t('possible_closure','POSSIBLE CLOSURE');
-      html += `<div class="airspace-alert ${cls}">${label}: ${a.country} — ${a.headline} <span style="opacity:.7">(${a.source})</span></div>`;
-    });
-  }
-  if (data.news && data.news.length) {
-    data.news.forEach(n => {
-      html += `<div class="news-item ${n.relevance}">
-        <div class="headline">${n.title}</div>
-        <div class="meta">${n.source} ${n.published ? '· '+n.published : ''} ${n.link ? '· <a href="'+n.link+'" target="_blank">'+t('read_more','Read')+'</a>' : ''}</div>
-      </div>`;
-    });
-  } else {
-    html += `<div class="empty">${t('no_news','No relevant conflict news found')}</div>`;
-  }
-  qs('newsSection').innerHTML = html;
+function toggleCard(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
 }
 
-function renderReports(data) {
-  let html = '<h2>' + t('community_reports','Community Reports') + '</h2>';
-  if (data.reports && data.reports.length) {
-    data.reports.forEach(r => {
-      html += `<div class="report">
-        <button class="vote" onclick="event.stopPropagation();upvote('${r.id}')">+${r.upvotes}</button>
-        <strong>${r.flight||r.airport}</strong> ${r.status ? '<span class="status '+r.status+'">'+r.status.toUpperCase()+'</span>' : ''}
-        <div style="margin-top:4px">${r.message}</div>
-        <div style="font-size:11px;color:#666;margin-top:2px">${r.reporter} · ${new Date(r.timestamp).toLocaleString()}</div>
-      </div>`;
-    });
-  } else {
-    html += `<div class="empty">${t('no_reports','No community reports yet. Be the first to report!')}</div>`;
-  }
-  qs('reportsSection').innerHTML = html;
-}
-
-function renderRides(data) {
-  let html = '<h2>' + t('ride_sharing','Ride Sharing') + '</h2>';
-  if (data.rides && data.rides.length) {
-    data.rides.forEach(r => {
-      html += `<div class="ride">
-        <div class="route">${r.origin} → ${r.destination}</div>
-        <div class="detail">${r.departure_time} · ${r.seats} ${t('seat_unit','seat(s)')} · <a href="tel:${r.contact}">${r.contact}</a></div>
-        ${r.notes ? '<div class="detail">'+r.notes+'</div>' : ''}
-      </div>`;
-    });
-  } else {
-    html += `<div class="empty">${t('no_rides','No rides posted yet')}</div>`;
-  }
-  qs('ridesSection').innerHTML = html;
-}
-
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function renderCrowdsource(data) {
-  let html = '<h2>' + t('crowdsource_title', 'Official Travel Advisories') + '</h2>';
-  let hasItems = false;
-
-  // Embassy / government advisories (always shown first — most reliable)
-  if (data.embassy && data.embassy.length) {
-    hasItems = true;
-    data.embassy.forEach(i => {
-      // Color-code by source
-      const isUS = i.source && i.source.toLowerCase().includes('us state');
-      const accent = isUS ? '#3498db' : '#2ecc71';
-      html += `<div class="report" style="border-left:3px solid ${accent};padding-left:8px">
-        <strong style="color:${accent}">${esc(i.source)}</strong>
-        <div style="margin-top:2px">${esc(i.text)}</div>
-        ${i.published ? `<div style="font-size:10px;color:#666;margin-top:2px">${esc(i.published)}</div>` : ''}
-        ${i.link ? `<a href="${esc(i.link)}" target="_blank" style="font-size:10px;color:#3498db">Read full advisory →</a>` : ''}
-      </div>`;
-    });
-  }
-
-  // X / Twitter posts
-  if (data.x && data.x.length) {
-    hasItems = true;
-    html += `<h2 style="margin-top:8px">${t('x_posts_title','X / Twitter Posts')}</h2>`;
-    data.x.forEach(i => {
-      const by = i.author ? ` <span style="color:#888">@${esc(i.author)}</span>` : '';
-      html += `<div class="report"><strong>X</strong>${by} ${esc(i.text)}${i.link ? ' <a href="'+esc(i.link)+'" target="_blank" onclick="event.stopPropagation()">→</a>' : ''}</div>`;
-    });
-  }
-
-  // Telegram
-  if (data.telegram && data.telegram.length) {
-    hasItems = true;
-    html += `<h2 style="margin-top:8px">Telegram</h2>`;
-    data.telegram.forEach(i => { html += `<div class="report"><strong>Telegram</strong> ${esc(i.text)}</div>`; });
-  }
-
-  if (!hasItems) {
-    html += `<div class="empty">${t('no_advisories','No advisories loaded')}</div>`;
-  }
-  qs('crowdsourceSection').innerHTML = html;
-}
-
-async function upvote(id) {
-  await fetch(`${API}/reports/${id}/upvote`, {method:'POST'}).catch(()=>{});
-  loadData(false);
-}
-
-function toggle(card) { card.querySelector('.card-body').classList.toggle('open'); }
-
-function showTab(name) {
-  document.querySelectorAll('.tab').forEach((el,i) => {
-    const tabs = ['plan','news','community','intel','alerts'];
-    el.classList.toggle('active', tabs[i] === name);
-  });
-  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-  const el = qs('tab-'+name);
-  if (el) el.classList.add('active');
-  if (name === 'intel') { loadHistory(); loadNotams(); }
-}
-
-async function testAlert() {
-  const phone = qs('alertPhone').value.trim().replace(/\s/g, '');
-  const res = qs('alertResult');
+async function testWA() {
+  const phone = qs('waPhone').value.trim().replace(/\s/g, '');
+  const res = qs('waResult');
   if (!phone || !phone.startsWith('+')) {
-    res.innerHTML = '<span style="color:#c0392b">Enter phone with country code, e.g. +13125551234</span>';
+    res.innerHTML = '<span style="color:#d93025">请输入手机号，以+开头（如 +8613812345678）</span>';
     return;
   }
-  res.innerHTML = '<span style="color:#888">Sending...</span>';
+  res.innerHTML = '<span style="color:#888">发送中...</span>';
   try {
     const resp = await fetch(`${API}/alerts/test`, {
       method: 'POST',
@@ -644,24 +423,23 @@ async function testAlert() {
     });
     const data = await resp.json().catch(() => ({}));
     if (resp.ok && data.ok) {
-      res.innerHTML = '<span style="color:#2ecc71">Sent! Check your WhatsApp.</span>';
+      res.innerHTML = '<span style="color:#0d9b4a">✓ 已发送，请查看WhatsApp</span>';
     } else {
-      const err = data.error || resp.statusText || 'Request failed';
-      res.innerHTML = `<span style="color:#c0392b">${err}</span>`;
+      res.innerHTML = `<span style="color:#d93025">${data.error || '发送失败'}</span>`;
     }
   } catch(e) {
-    res.innerHTML = '<span style="color:#c0392b">Network error. Is the server running? Try again.</span>';
+    res.innerHTML = '<span style="color:#d93025">网络错误，请重试</span>';
   }
 }
 
-async function subscribeAlerts() {
-  const phone = qs('alertPhone').value.trim().replace(/\s/g, '');
-  const res = qs('subscribeResult');
+async function subscribeWA() {
+  const phone = qs('waPhone').value.trim().replace(/\s/g, '');
+  const res = qs('waResult');
   if (!phone || !phone.startsWith('+')) {
-    res.innerHTML = '<span style="color:#c0392b">Enter your phone number first</span>';
+    res.innerHTML = '<span style="color:#d93025">请先输入手机号</span>';
     return;
   }
-  res.innerHTML = '<span style="color:#888">Subscribing...</span>';
+  res.innerHTML = '<span style="color:#888">订阅中...</span>';
   try {
     const resp = await fetch(`${API}/alerts/subscribe`, {
       method: 'POST',
@@ -670,66 +448,21 @@ async function subscribeAlerts() {
     });
     const data = await resp.json().catch(() => ({}));
     if (resp.ok && data.ok) {
-      res.innerHTML = '<span style="color:#2ecc71">Subscribed! You will get alerts when routes change.</span>';
+      res.innerHTML = '<span style="color:#0d9b4a">✓ 已订阅！航班变化时将通过WhatsApp通知您</span>';
     } else {
-      const err = data.error || resp.statusText || 'Request failed';
-      res.innerHTML = `<span style="color:#c0392b">${err}</span>`;
+      res.innerHTML = `<span style="color:#d93025">${data.error || '订阅失败'}</span>`;
     }
   } catch(e) {
-    res.innerHTML = '<span style="color:#c0392b">Network error. Try again.</span>';
+    res.innerHTML = '<span style="color:#d93025">网络错误，请重试</span>';
   }
-}
-
-async function loadNotams() {
-  const el = qs('notamsSection');
-  if (!el) return;
-  try {
-    const res = await fetch(`${API}/notams?airports=RUH,JED,DMM,IST`);
-    const data = await res.json();
-    const notams = data.notams || [];
-    let html = '<h2>' + (t('notams_title','NOTAMs (Aviation notices)') || 'NOTAMs (Aviation notices)') + '</h2>';
-    if (notams.length === 0) {
-      html += '<div class="empty">' + (t('no_notams','No NOTAMs retrieved for RUH, JED, DMM, IST') || 'No NOTAMs retrieved for RUH, JED, DMM, IST') + '</div>';
-    } else {
-      notams.forEach(n => {
-        const cls = n.critical ? 'insight trend_down' : 'insight';
-        html += `<div class="${cls}"><strong>${n.airport || '?'}</strong> ${esc(n.text || '')}</div>`;
-      });
-    }
-    el.innerHTML = html;
-  } catch(e) {
-    el.innerHTML = '<h2>' + (t('notams_title','NOTAMs (Aviation notices)') || 'NOTAMs') + '</h2><div class="empty">' + (t('notams_error','Could not load NOTAMs') || 'Could not load NOTAMs') + '</div>';
-  }
-}
-
-async function loadHistory() {
-  try {
-    const res = await fetch(`${API}/history`);
-    const data = await res.json();
-    if (data.conflicts) {
-      let html = '<h2>' + t('historical_patterns','Historical Conflict Patterns') + '</h2>';
-      data.conflicts.forEach(c => {
-        html += `<div class="insight"><strong>${c.conflict}</strong>: ${c.notes}
-          ${c.airspace_recovery_days != null ? ' · Airspace recovered in '+c.airspace_recovery_days+'d' : ' · Airspace did not recover'}
-        </div>`;
-      });
-      qs('historySection').innerHTML = html;
-    }
-  } catch(e) {}
-}
-
-function toggleFilters() {
-  const el = qs('barExtra');
-  el.classList.toggle('open');
-  qs('btn_filter').textContent = el.classList.contains('open') ? '✕ Less' : '⚙ More';
 }
 
 function toggleAuto() {
   autoRefresh = !autoRefresh;
-  qs('autoBtn').textContent = autoRefresh ? t('auto_on','Auto: ON') : t('auto_off','Auto: OFF');
+  qs('autoBtn').textContent = autoRefresh ? '自动:开' : '自动:关';
   qs('autoBtn').classList.toggle('on', autoRefresh);
   if (autoRefresh) loadData(false);
-  else { clearInterval(countdownTimer); qs('timer').textContent = ''; }
+  else { clearInterval(countdownTimer); qs('footerInfo').textContent = ''; }
 }
 
 function startCountdown(seconds) {
@@ -738,51 +471,12 @@ function startCountdown(seconds) {
   countdownTimer = setInterval(() => {
     countdown--;
     const m = Math.floor(countdown/60), s = countdown%60;
-    qs('timer').textContent = `${t('next_refresh','Next refresh')}: ${m}m ${s.toString().padStart(2,'0')}s`;
+    qs('footerInfo').textContent = `下次刷新: ${m}分${s.toString().padStart(2,'0')}秒`;
     if (countdown <= 0) { clearInterval(countdownTimer); loadData(false); }
   }, 1000);
 }
 
-function applyTranslationsToUI() {
-  qs('titleText').textContent = t('title', 'EMERGENCY FLIGHT FINDER');
-  qs('btn_refresh').textContent = t('refresh', 'Refresh Now');
-  qs('btn_live').textContent = t('live', 'Live');
-  qs('lbl_pax').textContent = t('passengers', 'Pax');
-  qs('lbl_budget').textContent = t('budget', 'Budget');
-  qs('tab_plan_label').textContent = t('action_plan', 'Action Plan');
-  qs('tab_news_label').textContent = t('news', 'News');
-  qs('tab_community_label').textContent = t('community', 'Community');
-  qs('tab_intel_label').textContent = t('intel', 'Intel');
-  qs('tab_alerts_label').textContent = t('alerts_tab', 'Alerts');
-  qs('alerts_title').textContent = t('alerts_title', 'Get Notified');
-  qs('alerts_what_title').textContent = t('alerts_what', 'What you\'ll receive');
-  qs('alerts_setup_title').textContent = t('alerts_setup', 'Setup WhatsApp Alerts');
-  qs('opt_balanced').textContent = t('balanced', 'Balanced');
-  qs('opt_soonest').textContent = t('soonest', 'Soonest');
-  qs('opt_shortest').textContent = t('shortest', 'Shortest');
-  qs('opt_best').textContent = t('best_score', 'Best score');
-  qs('opt_depart').textContent = t('departure', 'Departure');
-  qs('opt_price').textContent = t('price', 'Price');
-  qs('opt_dur').textContent = t('duration', 'Duration');
-  qs('opt_any').textContent = t('any_connections', 'Any');
-  qs('opt_1conn').textContent = t('one_connection', '1 connection max');
-  qs('opt_nonstop').textContent = t('nonstop_flight', 'Nonstop flight');
-  qs('warnText').textContent = t('confirm_airline', 'Flight data changes rapidly during conflict. Always confirm with the airline.');
-}
-
-async function switchLang(lang) {
-  currentLang = lang;
-  try {
-    const res = await fetch(`${API}/translations?lang=${lang}`);
-    T = await res.json();
-    applyTranslationsToUI();
-    loadData(false);
-  } catch(e) {}
-}
-
-['speed','sortBy','maxStops'].forEach(id => qs(id).addEventListener('change', () => loadData(false)));
-qs('passengers').addEventListener('change', () => loadData(false));
-qs('budget').addEventListener('change', () => loadData(false));
+['sortBy','maxStops'].forEach(id => qs(id).addEventListener('change', () => loadData(false)));
 loadData(false);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>

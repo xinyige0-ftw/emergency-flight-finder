@@ -1,0 +1,687 @@
+scenario:
+  name: "沙特回国航班监控"
+  description: >
+    监控从沙特阿拉伯（利雅得、吉达、达曼）飞往中国的所有航班。
+    区域冲突导致部分空域关闭，重点关注航班是否能正常起飞。
+  conflict_start: "2026-02-28"
+
+user:
+  passengers: 1
+  passport: "CN"
+  budget_usd: 15000
+  destination_flex: "anywhere"
+  risk_tolerance: "moderate"
+
+origin:
+  city: "沙特阿拉伯"
+  airport_code: "RUH"
+  airport_status: "open"
+  country: "Saudi Arabia"
+  notes: "沙特空域开放，三大机场均可出发"
+
+destination:
+  country: "China"
+  preferred_cities:
+    - code: "PEK"
+      name: "北京"
+    - code: "PVG"
+      name: "上海"
+    - code: "CAN"
+      name: "广州"
+    - code: "SZX"
+      name: "深圳"
+    - code: "HKG"
+      name: "香港"
+    - code: "CTU"
+      name: "成都"
+    - code: "XIY"
+      name: "西安"
+    - code: "KMG"
+      name: "昆明"
+    - code: "XMN"
+      name: "厦门"
+
+operational_airports:
+  - code: "RUH"
+    name: "哈立德国王国际机场"
+    city: "Riyadh"
+    country: "Saudi Arabia"
+    status: "open"
+    priority: 1
+    notes: "利雅得，沙特最大枢纽。直飞中国航班最多。"
+
+  - code: "JED"
+    name: "阿卜杜勒-阿齐兹国王国际机场"
+    city: "Jeddah"
+    country: "Saudi Arabia"
+    status: "open"
+    priority: 2
+    notes: "吉达，沙特航空直飞广州。远离冲突区域。"
+
+  - code: "DMM"
+    name: "法赫德国王国际机场"
+    city: "Dammam"
+    country: "Saudi Arabia"
+    status: "open"
+    priority: 3
+    notes: "达曼，东部省份。国际航班较少，可转机利雅得。"
+
+safe_hubs:
+  - code: "IST"
+    name: "伊斯坦布尔机场"
+    city: "Istanbul"
+    country: "Turkey"
+    notes: "土耳其航空枢纽。空域完全开放，每日多班飞中国。最可靠中转选择。"
+
+  - code: "MCT"
+    name: "马斯喀特国际机场"
+    city: "Muscat"
+    country: "Oman"
+    notes: "阿曼航空枢纽。空域受限但可用。可转机东南亚。"
+
+  - code: "BKK"
+    name: "素万那普机场"
+    city: "Bangkok"
+    country: "Thailand"
+    notes: "曼谷枢纽。空域开放，大量中国航班。"
+
+  - code: "SIN"
+    name: "樟宜机场"
+    city: "Singapore"
+    country: "Singapore"
+    notes: "新加坡枢纽。空域开放，多家航司飞中国。"
+
+  - code: "KUL"
+    name: "吉隆坡国际机场"
+    city: "Kuala Lumpur"
+    country: "Malaysia"
+    notes: "吉隆坡枢纽。马航及亚航飞中国。"
+
+  - code: "DEL"
+    name: "英迪拉·甘地国际机场"
+    city: "Delhi"
+    country: "India"
+    notes: "德里枢纽。印度空域开放，印航飞中国。"
+
+  - code: "LHR"
+    name: "希思罗机场"
+    city: "London"
+    country: "United Kingdom"
+    notes: "伦敦枢纽。路线很长但安全。需要过境签证。"
+
+  - code: "ADD"
+    name: "博莱国际机场"
+    city: "Addis Ababa"
+    country: "Ethiopia"
+    notes: "埃塞俄比亚航空枢纽。备选方案。"
+
+airspace_status:
+  closed:
+    - "Bahrain"
+    - "Qatar"
+    - "UAE"
+    - "Kuwait"
+    - "Iran"
+    - "Iraq"
+    - "Israel"
+    - "Jordan"
+  open:
+    - "Saudi Arabia"
+    - "Turkey"
+    - "Egypt"
+    - "Ethiopia"
+    - "India"
+    - "Thailand"
+    - "Singapore"
+    - "Malaysia"
+    - "China"
+  restricted:
+    - "Oman"
+
+known_flights:
+  # ══════════════════════════════════════════════════
+  # 直飞: 利雅得 RUH → 中国
+  # ══════════════════════════════════════════════════
+  - flight_number: "CZ5008"
+    airline: "南方航空"
+    origin: "RUH"
+    destination: "SZX"
+    days: ["Tue", "Thu", "Sat"]
+    depart_utc: "21:30"
+    arrive_utc: "05:40+1"
+    duration_hours: 8.2
+    aircraft: "A330-300"
+    contact: "+966 11 454 3388"
+    booking_url: "https://www.csair.com/"
+    price_economy_usd: 850
+    price_business_usd: 3500
+    conflict_proximity: "low"
+
+  - flight_number: "SV884"
+    airline: "沙特航空"
+    origin: "RUH"
+    destination: "CAN"
+    days: ["Tue", "Thu", "Sat"]
+    depart_utc: "21:40"
+    arrive_utc: "10:30+1"
+    duration_hours: 7.8
+    aircraft: "787-9"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 720
+    price_business_usd: 3200
+    conflict_proximity: "low"
+
+  - flight_number: "CX644"
+    airline: "国泰航空"
+    origin: "RUH"
+    destination: "HKG"
+    days: ["daily"]
+    depart_utc: "20:50"
+    arrive_utc: "04:55+1"
+    duration_hours: 8.1
+    aircraft: "A350-900"
+    contact: "+966 11 463 2211"
+    booking_url: "https://www.cathaypacific.com/"
+    price_economy_usd: 900
+    price_business_usd: 4200
+    conflict_proximity: "low"
+
+  - flight_number: "CA790"
+    airline: "中国国航"
+    origin: "RUH"
+    destination: "PEK"
+    days: ["Mon", "Wed", "Fri", "Sun"]
+    depart_utc: "21:05"
+    arrive_utc: "10:45+1"
+    duration_hours: 8.5
+    aircraft: "A330-300"
+    contact: "+966 11 211 1333"
+    booking_url: "https://www.airchina.com/"
+    price_economy_usd: 800
+    price_business_usd: 3800
+    conflict_proximity: "low"
+
+  # ══════════════════════════════════════════════════
+  # 直飞: 吉达 JED → 中国
+  # ══════════════════════════════════════════════════
+  - flight_number: "SV882"
+    airline: "沙特航空"
+    origin: "JED"
+    destination: "CAN"
+    days: ["Mon", "Wed", "Fri"]
+    depart_utc: "22:50"
+    arrive_utc: "12:25+1"
+    duration_hours: 8.6
+    aircraft: "787-9"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 720
+    price_business_usd: 3200
+    conflict_proximity: "low"
+
+  # ══════════════════════════════════════════════════
+  # 经伊斯坦布尔 IST 中转
+  # ══════════════════════════════════════════════════
+  - flight_number: "TK145"
+    airline: "土耳其航空"
+    origin: "RUH"
+    destination: "IST"
+    days: ["daily"]
+    depart_utc: "03:30"
+    arrive_utc: "07:40"
+    duration_hours: 4.2
+    aircraft: "A321"
+    contact: "+966 11 477 3300"
+    booking_url: "https://www.turkishairlines.com/"
+    price_economy_usd: 350
+    price_business_usd: 1200
+    conflict_proximity: "low"
+
+  - flight_number: "TK157"
+    airline: "土耳其航空"
+    origin: "DMM"
+    destination: "IST"
+    days: ["daily"]
+    depart_utc: "04:10"
+    arrive_utc: "08:30"
+    duration_hours: 4.3
+    aircraft: "A321"
+    contact: "+966 13 887 2100"
+    booking_url: "https://www.turkishairlines.com/"
+    price_economy_usd: 320
+    price_business_usd: 1100
+    conflict_proximity: "low"
+
+  - flight_number: "TK170"
+    airline: "土耳其航空"
+    origin: "JED"
+    destination: "IST"
+    days: ["daily"]
+    depart_utc: "05:00"
+    arrive_utc: "09:20"
+    duration_hours: 4.3
+    aircraft: "A330"
+    contact: "+966 12 660 3100"
+    booking_url: "https://www.turkishairlines.com/"
+    price_economy_usd: 340
+    price_business_usd: 1150
+    conflict_proximity: "low"
+
+  - flight_number: "TK88"
+    airline: "土耳其航空"
+    origin: "IST"
+    destination: "PEK"
+    days: ["daily"]
+    depart_utc: "20:05"
+    arrive_utc: "05:15+1"
+    duration_hours: 9.2
+    aircraft: "787-9"
+    contact: "+90 212 444 0849"
+    booking_url: "https://www.turkishairlines.com/"
+    price_economy_usd: 500
+    price_business_usd: 2000
+    conflict_proximity: "low"
+
+  - flight_number: "TK26"
+    airline: "土耳其航空"
+    origin: "IST"
+    destination: "PVG"
+    days: ["daily"]
+    depart_utc: "17:25"
+    arrive_utc: "05:35+1"
+    duration_hours: 10.2
+    aircraft: "A350"
+    contact: "+90 212 444 0849"
+    booking_url: "https://www.turkishairlines.com/"
+    price_economy_usd: 500
+    price_business_usd: 2000
+    conflict_proximity: "low"
+
+  - flight_number: "TK72"
+    airline: "土耳其航空"
+    origin: "IST"
+    destination: "CAN"
+    days: ["daily"]
+    depart_utc: "17:50"
+    arrive_utc: "06:00+1"
+    duration_hours: 10.2
+    aircraft: "A350"
+    contact: "+90 212 444 0849"
+    booking_url: "https://www.turkishairlines.com/"
+    price_economy_usd: 500
+    price_business_usd: 2000
+    conflict_proximity: "low"
+
+  - flight_number: "TK54"
+    airline: "土耳其航空"
+    origin: "IST"
+    destination: "HKG"
+    days: ["daily"]
+    depart_utc: "01:50"
+    arrive_utc: "12:50"
+    duration_hours: 11.0
+    aircraft: "A350"
+    contact: "+90 212 444 0849"
+    booking_url: "https://www.turkishairlines.com/"
+    price_economy_usd: 520
+    price_business_usd: 2100
+    conflict_proximity: "low"
+
+  # ══════════════════════════════════════════════════
+  # 经马斯喀特 MCT 中转 → 东南亚 → 中国
+  # ══════════════════════════════════════════════════
+  - flight_number: "WY667"
+    airline: "阿曼航空"
+    origin: "RUH"
+    destination: "MCT"
+    days: ["daily"]
+    depart_utc: "14:00"
+    arrive_utc: "16:30"
+    duration_hours: 2.5
+    aircraft: "737-800"
+    contact: "+966 11 478 2000"
+    booking_url: "https://www.omanair.com/"
+    price_economy_usd: 200
+    price_business_usd: 600
+    conflict_proximity: "medium"
+
+  - flight_number: "WY669"
+    airline: "阿曼航空"
+    origin: "DMM"
+    destination: "MCT"
+    days: ["Mon", "Wed", "Fri", "Sun"]
+    depart_utc: "11:00"
+    arrive_utc: "13:00"
+    duration_hours: 2.0
+    aircraft: "737-800"
+    contact: "+966 13 887 3000"
+    booking_url: "https://www.omanair.com/"
+    price_economy_usd: 180
+    price_business_usd: 550
+    conflict_proximity: "medium"
+
+  - flight_number: "WY841"
+    airline: "阿曼航空"
+    origin: "MCT"
+    destination: "BKK"
+    days: ["daily"]
+    depart_utc: "20:30"
+    arrive_utc: "06:00+1"
+    duration_hours: 6.5
+    aircraft: "787-9"
+    contact: "+968 2453 1111"
+    booking_url: "https://www.omanair.com/"
+    price_economy_usd: 350
+    price_business_usd: 1200
+    conflict_proximity: "low"
+
+  - flight_number: "WY843"
+    airline: "阿曼航空"
+    origin: "MCT"
+    destination: "KUL"
+    days: ["daily"]
+    depart_utc: "21:00"
+    arrive_utc: "07:30+1"
+    duration_hours: 7.5
+    aircraft: "787-9"
+    contact: "+968 2453 1111"
+    booking_url: "https://www.omanair.com/"
+    price_economy_usd: 380
+    price_business_usd: 1300
+    conflict_proximity: "low"
+
+  - flight_number: "WY851"
+    airline: "阿曼航空"
+    origin: "MCT"
+    destination: "SIN"
+    days: ["Tue", "Thu", "Sat"]
+    depart_utc: "21:30"
+    arrive_utc: "08:30+1"
+    duration_hours: 8.0
+    aircraft: "A330"
+    contact: "+968 2453 1111"
+    booking_url: "https://www.omanair.com/"
+    price_economy_usd: 400
+    price_business_usd: 1400
+    conflict_proximity: "low"
+
+  # 东南亚 → 中国 (从曼谷、新加坡、吉隆坡)
+  - flight_number: "CZ3036"
+    airline: "南方航空"
+    origin: "BKK"
+    destination: "CAN"
+    days: ["daily"]
+    depart_utc: "01:30"
+    arrive_utc: "05:30"
+    duration_hours: 3.0
+    aircraft: "A321"
+    contact: "+66 2 261 0245"
+    booking_url: "https://www.csair.com/"
+    price_economy_usd: 250
+    price_business_usd: 800
+    conflict_proximity: "low"
+
+  - flight_number: "TG668"
+    airline: "泰国航空"
+    origin: "BKK"
+    destination: "PEK"
+    days: ["daily"]
+    depart_utc: "00:05"
+    arrive_utc: "05:55"
+    duration_hours: 4.8
+    aircraft: "A350"
+    contact: "+66 2 356 1111"
+    booking_url: "https://www.thaiairways.com/"
+    price_economy_usd: 300
+    price_business_usd: 1000
+    conflict_proximity: "low"
+
+  - flight_number: "TG614"
+    airline: "泰国航空"
+    origin: "BKK"
+    destination: "PVG"
+    days: ["daily"]
+    depart_utc: "01:00"
+    arrive_utc: "06:30"
+    duration_hours: 4.5
+    aircraft: "787-8"
+    contact: "+66 2 356 1111"
+    booking_url: "https://www.thaiairways.com/"
+    price_economy_usd: 280
+    price_business_usd: 950
+    conflict_proximity: "low"
+
+  - flight_number: "SQ802"
+    airline: "新加坡航空"
+    origin: "SIN"
+    destination: "PEK"
+    days: ["daily"]
+    depart_utc: "01:00"
+    arrive_utc: "07:30"
+    duration_hours: 6.5
+    aircraft: "A350-900"
+    contact: "+65 6223 8888"
+    booking_url: "https://www.singaporeair.com/"
+    price_economy_usd: 350
+    price_business_usd: 1500
+    conflict_proximity: "low"
+
+  - flight_number: "SQ830"
+    airline: "新加坡航空"
+    origin: "SIN"
+    destination: "PVG"
+    days: ["daily"]
+    depart_utc: "02:00"
+    arrive_utc: "07:50"
+    duration_hours: 5.8
+    aircraft: "A350-900"
+    contact: "+65 6223 8888"
+    booking_url: "https://www.singaporeair.com/"
+    price_economy_usd: 330
+    price_business_usd: 1400
+    conflict_proximity: "low"
+
+  - flight_number: "MH376"
+    airline: "马来西亚航空"
+    origin: "KUL"
+    destination: "PEK"
+    days: ["daily"]
+    depart_utc: "23:30"
+    arrive_utc: "05:50+1"
+    duration_hours: 6.3
+    aircraft: "A330-300"
+    contact: "+60 3 7843 3000"
+    booking_url: "https://www.malaysiaairlines.com/"
+    price_economy_usd: 300
+    price_business_usd: 1200
+    conflict_proximity: "low"
+
+  - flight_number: "MH388"
+    airline: "马来西亚航空"
+    origin: "KUL"
+    destination: "PVG"
+    days: ["daily"]
+    depart_utc: "00:15"
+    arrive_utc: "06:15"
+    duration_hours: 5.5
+    aircraft: "A330-300"
+    contact: "+60 3 7843 3000"
+    booking_url: "https://www.malaysiaairlines.com/"
+    price_economy_usd: 280
+    price_business_usd: 1100
+    conflict_proximity: "low"
+
+  # ══════════════════════════════════════════════════
+  # 沙特 → 东南亚直飞 (不经阿曼)
+  # ══════════════════════════════════════════════════
+  - flight_number: "SV846"
+    airline: "沙特航空"
+    origin: "RUH"
+    destination: "BKK"
+    days: ["Mon", "Wed", "Fri"]
+    depart_utc: "20:00"
+    arrive_utc: "07:30+1"
+    duration_hours: 8.5
+    aircraft: "787-9"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 600
+    price_business_usd: 2400
+    conflict_proximity: "low"
+
+  - flight_number: "SV848"
+    airline: "沙特航空"
+    origin: "RUH"
+    destination: "KUL"
+    days: ["Tue", "Thu", "Sat"]
+    depart_utc: "20:30"
+    arrive_utc: "08:00+1"
+    duration_hours: 8.5
+    aircraft: "787-9"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 620
+    price_business_usd: 2500
+    conflict_proximity: "low"
+
+  - flight_number: "SV850"
+    airline: "沙特航空"
+    origin: "JED"
+    destination: "SIN"
+    days: ["Mon", "Wed", "Sat"]
+    depart_utc: "21:00"
+    arrive_utc: "09:30+1"
+    duration_hours: 9.5
+    aircraft: "787-9"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 650
+    price_business_usd: 2600
+    conflict_proximity: "low"
+
+  # ══════════════════════════════════════════════════
+  # 经印度中转 (DEL)
+  # ══════════════════════════════════════════════════
+  - flight_number: "AI902"
+    airline: "印度航空"
+    origin: "RUH"
+    destination: "DEL"
+    days: ["daily"]
+    depart_utc: "18:00"
+    arrive_utc: "00:30+1"
+    duration_hours: 4.5
+    aircraft: "787-8"
+    contact: "+966 11 463 8000"
+    booking_url: "https://www.airindia.com/"
+    price_economy_usd: 280
+    price_business_usd: 900
+    conflict_proximity: "low"
+
+  - flight_number: "AI314"
+    airline: "印度航空"
+    origin: "DEL"
+    destination: "PVG"
+    days: ["Mon", "Wed", "Fri", "Sun"]
+    depart_utc: "03:00"
+    arrive_utc: "10:30"
+    duration_hours: 5.5
+    aircraft: "787-8"
+    contact: "+91 11 2462 2220"
+    booking_url: "https://www.airindia.com/"
+    price_economy_usd: 350
+    price_business_usd: 1200
+    conflict_proximity: "low"
+
+  - flight_number: "AI348"
+    airline: "印度航空"
+    origin: "DEL"
+    destination: "HKG"
+    days: ["daily"]
+    depart_utc: "04:30"
+    arrive_utc: "12:00"
+    duration_hours: 5.5
+    aircraft: "A320neo"
+    contact: "+91 11 2462 2220"
+    booking_url: "https://www.airindia.com/"
+    price_economy_usd: 320
+    price_business_usd: 1100
+    conflict_proximity: "low"
+
+  # ══════════════════════════════════════════════════
+  # 沙特国内转机 (达曼 → 利雅得/吉达)
+  # ══════════════════════════════════════════════════
+  - flight_number: "SV1079"
+    airline: "沙特航空"
+    origin: "DMM"
+    destination: "RUH"
+    days: ["daily"]
+    depart_utc: "03:00"
+    arrive_utc: "04:15"
+    duration_hours: 1.25
+    aircraft: "A320"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 80
+    price_business_usd: 250
+    conflict_proximity: "low"
+
+  - flight_number: "SV1085"
+    airline: "沙特航空"
+    origin: "DMM"
+    destination: "RUH"
+    days: ["daily"]
+    depart_utc: "14:00"
+    arrive_utc: "15:15"
+    duration_hours: 1.25
+    aircraft: "A320"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 80
+    price_business_usd: 250
+    conflict_proximity: "low"
+
+  - flight_number: "XY402"
+    airline: "飞纳斯航空"
+    origin: "DMM"
+    destination: "RUH"
+    days: ["daily"]
+    depart_utc: "05:30"
+    arrive_utc: "06:45"
+    duration_hours: 1.25
+    aircraft: "A320neo"
+    contact: "+966 9200 11111"
+    booking_url: "https://www.flynas.com/"
+    price_economy_usd: 55
+    price_business_usd: 180
+    conflict_proximity: "low"
+
+  - flight_number: "SV1055"
+    airline: "沙特航空"
+    origin: "DMM"
+    destination: "JED"
+    days: ["daily"]
+    depart_utc: "06:00"
+    arrive_utc: "08:30"
+    duration_hours: 2.5
+    aircraft: "A320"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 120
+    price_business_usd: 350
+    conflict_proximity: "low"
+
+  - flight_number: "SV1521"
+    airline: "沙特航空"
+    origin: "RUH"
+    destination: "JED"
+    days: ["daily"]
+    depart_utc: "04:00"
+    arrive_utc: "05:45"
+    duration_hours: 1.75
+    aircraft: "A320"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 100
+    price_business_usd: 300
+    conflict_proximity: "low"

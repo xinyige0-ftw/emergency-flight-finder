@@ -1,4 +1,4 @@
-"""FastAPI web server — mobile-first UI for Emergency Flight Finder."""
+"""FastAPI web server — 沙特回国航班监控 (Saudi-to-China Flight Monitor)."""
 from __future__ import annotations
 
 import os
@@ -7,7 +7,6 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-# Load .env from project root so TWILIO_* and EVAC_ALERT_* are set when running locally
 try:
     from dotenv import load_dotenv
     _root = Path(__file__).resolve().parent.parent
@@ -20,29 +19,26 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from .alerts import AlertConfig, detect_changes, send_alerts, _send_twilio_whatsapp, _send_twilio_sms, _save_subscriptions
 from .crowdsource import fetch_all_crowdsource
-from .community import (
-    CommunityReport, RideShare, get_reports, get_rideshares, get_translations,
-    list_scenarios_available, post_rideshare, submit_report, upvote_report,
-)
+from .community import get_translations, list_scenarios_available
 from .config import load_scenario
 from .intel import fetch_conflict_news, detect_airspace_changes_from_news, fetch_notams
-from .models import AST, Route
+from .models import AST, CST, Route
 from .predictions import (
     analyze_patterns, check_all_transit_visas, get_historical_context,
     record_status_snapshot, wait_vs_go_recommendation,
+    get_all_flight_histories, get_daily_summary,
 )
 from .pricing import check_prices_and_seats, filter_by_budget, check_multi_passenger_availability
 from .routes import build_routes
 from .searcher import check_all_flights
 
-app = FastAPI(title="Emergency Flight Finder")
+app = FastAPI(title="沙特回国航班监控")
 
 SCENARIOS_DIR = Path(__file__).parent.parent / "scenarios"
 STATIC_DIR = Path(__file__).parent.parent / "static"
 
 _previous_routes: list[Route] = []
 
-# Rate limit: 10 POSTs per minute per IP
 _rate_limit: dict[str, list[float]] = defaultdict(list)
 RATE_LIMIT_WINDOW = 60.0
 RATE_LIMIT_MAX = 10
@@ -76,12 +72,12 @@ async def service_worker():
 @app.get("/manifest.json")
 async def manifest():
     return JSONResponse({
-        "name": "Emergency Flight Finder",
-        "short_name": "EvacFlight",
+        "name": "沙特回国航班监控",
+        "short_name": "回国航班",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#1a1a2e",
-        "theme_color": "#e94560",
+        "background_color": "#f8f9fa",
+        "theme_color": "#1a73e8",
         "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}],
     })
 
@@ -89,18 +85,18 @@ async def manifest():
 @app.get("/icon.svg")
 async def icon():
     svg = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-    <rect width="100" height="100" rx="20" fill="#e94560"/>
-    <text x="50" y="65" text-anchor="middle" fill="white" font-size="50" font-family="Arial">E</text>
+    <rect width="100" height="100" rx="20" fill="#1a73e8"/>
+    <text x="50" y="68" text-anchor="middle" fill="white" font-size="46" font-family="Arial">✈</text>
     </svg>'''
     return HTMLResponse(content=svg, media_type="image/svg+xml")
 
 
 @app.get("/api/routes")
 async def get_routes(
-    scenario: str = "bahrain_to_china",
+    scenario: str = "saudi_to_china",
     live: bool = False,
     speed: str = "balanced",
-    budget: float = 10000,
+    budget: float = 15000,
     passengers: int = 1,
     passport: str = "CN",
     risk: str = "moderate",
@@ -114,7 +110,7 @@ async def get_routes(
 
     path = SCENARIOS_DIR / f"{scenario}.yaml"
     if not path.exists():
-        return JSONResponse({"error": f"Scenario '{scenario}' not found"}, status_code=404)
+        return JSONResponse({"error": f"场景 '{scenario}' 未找到"}, status_code=404)
 
     sc = load_scenario(path)
     sc.user.passengers = passengers
@@ -157,29 +153,43 @@ async def get_routes(
     recommendation = wait_vs_go_recommendation(routes, sc)
     visa_checks = check_all_transit_visas(passport, routes)
     patterns = analyze_patterns(routes)
+    flight_histories = get_all_flight_histories()
 
     _previous_routes = routes
 
     result = {
         "updated": now.isoformat(),
-        "updated_ast": now.astimezone(AST).strftime("%a %b %d, %H:%M AST"),
+        "updated_ast": now.astimezone(AST).strftime("%m-%d %H:%M 沙特时间"),
+        "updated_cst": now.astimezone(CST).strftime("%m-%d %H:%M 北京时间"),
         "scenario": sc.name,
+        "conflict_start": sc.conflict_start,
         "airspace": {
             "closed": sc.airspace_closed,
             "open": sc.airspace_open,
             "restricted": sc.airspace_restricted,
         },
-        "escape_routes": [
-            {"from": r.origin, "to": r.destination, "via": r.via,
-             "hours": r.estimated_hours, "status": r.status}
-            for r in sc.escape_routes
+        "airports": [
+            {"code": a.code, "name": a.name, "city": a.city, "status": a.status.value, "notes": a.notes}
+            for a in sc.operational_airports
         ],
-        "routes": [_route_to_dict(r, now) for r in routes],
+        "routes": [_route_to_dict(r, now, flight_histories) for r in routes],
         "recommendation": recommendation,
         "visa_checks": visa_checks,
         "patterns": patterns,
+        "daily_summary": get_daily_summary(),
     }
     return JSONResponse(result)
+
+
+@app.get("/api/flight-history")
+async def get_flight_history_api():
+    """Per-flight status history since conflict start."""
+    histories = get_all_flight_histories()
+    summary = get_daily_summary()
+    return JSONResponse({
+        "flights": histories,
+        "daily_summary": summary,
+    })
 
 
 @app.get("/api/history")
@@ -189,7 +199,6 @@ async def get_history():
 
 @app.get("/api/crowdsource")
 async def get_crowdsource():
-    """External crowdsource: X (Nitter RSS), Telegram RSS, embassy advisories."""
     try:
         data = await fetch_all_crowdsource(max_per_source=15)
     except Exception:
@@ -198,7 +207,7 @@ async def get_crowdsource():
 
 
 @app.get("/api/news")
-async def get_news(scenario: str = "bahrain_to_china"):
+async def get_news(scenario: str = "saudi_to_china"):
     path = SCENARIOS_DIR / f"{scenario}.yaml"
     sc = load_scenario(path) if path.exists() else None
 
@@ -218,7 +227,7 @@ async def get_news(scenario: str = "bahrain_to_china"):
 
 
 @app.get("/api/notams")
-async def get_notams(airports: str = "RUH,JED,DMM,IST"):
+async def get_notams(airports: str = "RUH,JED,DMM"):
     codes = [c.strip().upper() for c in airports.split(",") if c.strip()]
     try:
         notams = await fetch_notams(codes)
@@ -232,112 +241,37 @@ async def list_scenarios():
     return JSONResponse({"scenarios": list_scenarios_available(SCENARIOS_DIR)})
 
 
-@app.get("/api/reports")
-async def api_get_reports(airport: str = "", flight: str = "", hours: float = 24):
-    reports = get_reports(airport=airport, flight=flight, max_age_hours=hours)
-    return JSONResponse({"reports": [r.to_dict() for r in reports]})
-
-
-@app.post("/api/reports")
-async def api_submit_report(request: Request,
-    report_type: str = "flight_status",
-    flight: str = "",
-    airport: str = "",
-    message: str = "",
-    status: str = "",
-    reporter: str = "anonymous",
-):
-    ip = _client_ip(request)
-    if not _rate_limit_check(ip):
-        return JSONResponse({"ok": False, "error": "Too many requests"}, status_code=429)
-    report_type = (report_type or "flight_status")[:50]
-    flight = (flight or "")[:20]
-    airport = (airport or "")[:20]
-    message = (message or "")[:2000]
-    status = (status or "")[:30]
-    reporter = (reporter or "anonymous")[:100]
-    report = CommunityReport(
-        reporter=reporter, report_type=report_type,
-        flight_number=flight, airport=airport,
-        message=message, status=status,
-    )
-    submit_report(report)
-    return JSONResponse({"ok": True, "report": report.to_dict()})
-
-
-@app.post("/api/reports/{report_id}/upvote")
-async def api_upvote(request: Request, report_id: str):
-    if not _rate_limit_check(_client_ip(request)):
-        return JSONResponse({"ok": False, "error": "Too many requests"}, status_code=429)
-    report_id = (report_id or "")[:50]
-    ok = upvote_report(report_id)
-    return JSONResponse({"ok": ok})
-
-
-@app.get("/api/rideshares")
-async def api_get_rides(origin: str = "", destination: str = ""):
-    rides = get_rideshares(origin=origin, destination=destination)
-    return JSONResponse({"rides": [r.to_dict() for r in rides]})
-
-
-@app.post("/api/rideshares")
-async def api_post_ride(request: Request,
-    origin: str = "",
-    destination: str = "",
-    departure_time: str = "",
-    seats: int = 1,
-    contact: str = "",
-    notes: str = "",
-):
-    ip = _client_ip(request)
-    if not _rate_limit_check(ip):
-        return JSONResponse({"ok": False, "error": "Too many requests"}, status_code=429)
-    origin = (origin or "")[:200]
-    destination = (destination or "")[:200]
-    departure_time = (departure_time or "")[:50]
-    seats = max(1, min(10, seats))
-    contact = (contact or "")[:50]
-    notes = (notes or "")[:500]
-    ride = RideShare(
-        origin=origin, destination=destination,
-        departure_time=departure_time, seats=seats,
-        contact=contact, notes=notes,
-    )
-    post_rideshare(ride)
-    return JSONResponse({"ok": True, "ride": ride.to_dict()})
-
-
 @app.post("/api/alerts/test")
 async def api_test_alert(request: Request):
     ip = _client_ip(request)
     if not _rate_limit_check(ip):
-        return JSONResponse({"ok": False, "error": "Rate limited. Try again in a minute."}, status_code=429)
+        return JSONResponse({"ok": False, "error": "请求过多，请稍后再试"}, status_code=429)
     try:
         body = await request.json()
     except Exception:
-        return JSONResponse({"ok": False, "error": "Invalid JSON"}, status_code=400)
+        return JSONResponse({"ok": False, "error": "无效的JSON"}, status_code=400)
 
     phone = (body.get("phone") or "").strip().replace(" ", "")[:20]
     channel = (body.get("channel") or "whatsapp").strip()
 
     if not phone or not phone.startswith("+"):
-        return JSONResponse({"ok": False, "error": "Phone must start with + and country code (e.g. +13125551234)"}, status_code=400)
+        return JSONResponse({"ok": False, "error": "手机号必须以+开头，包含国家代码（如 +8613812345678）"}, status_code=400)
 
     config = AlertConfig()
     if not config.twilio_sid or not config.twilio_token:
-        return JSONResponse({"ok": False, "error": "Twilio not configured on server. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in .env or environment."}, status_code=500)
+        return JSONResponse({"ok": False, "error": "服务器未配置Twilio。请设置TWILIO_ACCOUNT_SID和TWILIO_AUTH_TOKEN。"}, status_code=500)
 
     if channel == "whatsapp" and not config.twilio_whatsapp_from:
-        return JSONResponse({"ok": False, "error": "WhatsApp sender not configured. Set TWILIO_WHATSAPP_FROM (e.g. +14155238886 for sandbox)."}, status_code=500)
+        return JSONResponse({"ok": False, "error": "WhatsApp发送号未配置。"}, status_code=500)
 
-    msg = "EVAC ALERT TEST: You will receive WhatsApp alerts when flight statuses change, prices drop, or new routes appear."
+    msg = "【沙特回国航班监控】测试消息：当航班状态变化（取消、延误、恢复运营）或价格变动时，您将收到实时通知。"
 
     try:
         if channel == "whatsapp":
             await _send_twilio_whatsapp(config, phone, msg)
         else:
             await _send_twilio_sms(config, phone, msg)
-        return JSONResponse({"ok": True, "message": f"Test {channel} sent to {phone}"})
+        return JSONResponse({"ok": True, "message": f"测试{channel}已发送至{phone}"})
     except Exception as e:
         err = str(e).strip()[:300]
         return JSONResponse({"ok": False, "error": err}, status_code=500)
@@ -347,42 +281,44 @@ async def api_test_alert(request: Request):
 async def api_subscribe_alerts(request: Request):
     ip = _client_ip(request)
     if not _rate_limit_check(ip):
-        return JSONResponse({"ok": False, "error": "Rate limited"}, status_code=429)
+        return JSONResponse({"ok": False, "error": "请求过多"}, status_code=429)
     try:
         body = await request.json()
     except Exception:
-        return JSONResponse({"ok": False, "error": "Invalid JSON"}, status_code=400)
+        return JSONResponse({"ok": False, "error": "无效的JSON"}, status_code=400)
 
     phone = (body.get("phone") or "").strip()[:20]
     if not phone or not phone.startswith("+"):
-        return JSONResponse({"ok": False, "error": "Phone must start with + and country code"}, status_code=400)
+        return JSONResponse({"ok": False, "error": "手机号必须以+开头"}, status_code=400)
 
-    # Persist so alerts are sent to this number (survives restarts; used by AlertConfig)
     _save_subscriptions({"whatsapp": phone})
     os.environ["EVAC_ALERT_WHATSAPP"] = phone
-    return JSONResponse({"ok": True, "message": f"WhatsApp alerts will be sent to {phone} on route changes."})
+    return JSONResponse({"ok": True, "message": f"已订阅，航班变化时将通过WhatsApp通知{phone}"})
 
 
 @app.get("/api/translations")
-async def api_translations(lang: str = "en"):
+async def api_translations(lang: str = "zh"):
     return JSONResponse(get_translations(lang))
 
 
 AIRPORT_TZ = {
     "DMM": 3, "RUH": 3, "JED": 3,
-    "IST": 3,
+    "IST": 3, "MCT": 4,
     "PEK": 8, "PVG": 8, "CAN": 8, "SZX": 8, "HKG": 8,
-    "ADD": 3, "LHR": 0, "DEL": 5.5, "BKK": 7, "SIN": 8, "KUL": 8,
+    "CTU": 8, "XIY": 8, "KMG": 8, "XMN": 8,
+    "BKK": 7, "SIN": 8, "KUL": 8,
+    "DEL": 5.5, "BOM": 5.5,
+    "ADD": 3, "LHR": 0, "CAI": 2,
     "NRT": 9, "ICN": 9, "DOH": 3, "DXB": 4,
 }
 
 TZ_LABEL = {
-    3: "AST", 8: "CST", 0: "GMT", 5.5: "IST", 7: "ICT", 9: "JST", 4: "GST",
+    3: "沙特", 4: "阿曼", 8: "北京", 0: "伦敦",
+    5.5: "印度", 7: "泰国", 9: "日本", 2: "开罗",
 }
 
 
 def _utc_time_to_local(utc_time_str: str, tz_offset: float) -> str:
-    """Convert a UTC time string like '21:30' or '05:40+1' to local time string."""
     if not utc_time_str:
         return ""
     plus_day = "+1" in utc_time_str
@@ -404,11 +340,11 @@ def _utc_time_to_local(utc_time_str: str, tz_offset: float) -> str:
         day_offset -= 1
     lh, lm = divmod(total_min, 60)
     label = TZ_LABEL.get(tz_offset, f"UTC+{tz_offset:g}")
-    day_tag = f"+{day_offset}d" if day_offset > 0 else ""
+    day_tag = f"+{day_offset}天" if day_offset > 0 else ""
     return f"{lh:02d}:{lm:02d} {label}{day_tag}"
 
 
-def _route_to_dict(route: Route, now: datetime) -> dict:
+def _route_to_dict(route: Route, now: datetime, flight_histories: dict) -> dict:
     wait = 0.0
     if route.next_departure:
         wait = max(0, (route.next_departure - now).total_seconds() / 3600)
@@ -433,6 +369,8 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
         if idx > 0 and idx - 1 < len(route.layover_hours):
             layover_before = route.layover_hours[idx - 1]
 
+        leg_history = flight_histories.get(leg.flight_number, {})
+
         legs_data.append({
             "flight": leg.flight_number,
             "airline": leg.airline,
@@ -453,6 +391,8 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
             "layover_before": layover_before,
             "booking_url": leg.booking_url or "",
             "contact": leg.contact or "",
+            "days": leg.scheduled_days,
+            "history": leg_history,
         })
 
     arrive_label = None
@@ -490,8 +430,6 @@ def _route_to_dict(route: Route, now: datetime) -> dict:
             for s in route.ground_segments
         ],
     }
-
-
 
 
 def start_server(host: str = "0.0.0.0", port: int = 8000):

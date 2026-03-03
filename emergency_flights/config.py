@@ -110,6 +110,7 @@ def load_scenario(path: str | Path) -> Scenario:
     return Scenario(
         name=scenario_meta["name"],
         description=scenario_meta.get("description", ""),
+        conflict_start=scenario_meta.get("conflict_start", "2026-02-28"),
         origin_city=origin["city"],
         origin_airport=origin["airport_code"],
         origin_status=AirspaceState(origin.get("airport_status", "closed")),

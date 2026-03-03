@@ -34,7 +34,7 @@ SCENARIOS_DIR = Path(__file__).parent.parent / "scenarios"
 
 @click.group()
 def cli() -> None:
-    """Emergency Flight Finder — fastest way out of a conflict zone."""
+    """沙特回国航班监控 — 监控沙特飞往中国的航班状态"""
     pass
 
 
@@ -282,7 +282,7 @@ def _resolve_scenario(scenario_file: str | None, scenario_name: str | None) -> P
     yamls = list(SCENARIOS_DIR.glob("*.yaml"))
     if yamls:
         return yamls[0]
-    console.print("[red]No scenario file found. Use: evac find -s bahrain_to_china[/red]")
+    console.print("[red]No scenario file found. Use: evac find -s saudi_to_china[/red]")
     return None
 
 

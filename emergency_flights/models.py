@@ -144,6 +144,7 @@ class UserProfile(BaseModel):
 class Scenario(BaseModel):
     name: str
     description: str = ""
+    conflict_start: str = "2026-02-28"
     origin_city: str
     origin_airport: str
     origin_status: AirspaceState
