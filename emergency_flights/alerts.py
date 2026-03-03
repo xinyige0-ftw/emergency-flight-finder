@@ -135,7 +135,7 @@ def detect_changes(current: list[Route], previous: list[Route]) -> list[dict]:
             changes.append({
                 "route": route.name,
                 "type": "new_route",
-                "message": f"New route available: {route.name}",
+                "message": f"新线路: {route.name}",
             })
             continue
 
@@ -158,11 +158,11 @@ def detect_changes(current: list[Route], previous: list[Route]) -> list[dict]:
         if prev.price_economy_usd and route.price_economy_usd:
             diff = route.price_economy_usd - prev.price_economy_usd
             if abs(diff) > 50:
-                direction = "dropped" if diff < 0 else "increased"
+                direction = "下降" if diff < 0 else "上涨"
                 changes.append({
                     "route": route.name,
                     "type": "price_change",
-                    "message": f"{route.name}: price {direction} by ${abs(diff):.0f}",
+                    "message": f"{route.name}: 价格{'下降' if diff < 0 else '上涨'}${abs(diff):.0f}",
                 })
 
     for prev_route in previous:
@@ -170,7 +170,7 @@ def detect_changes(current: list[Route], previous: list[Route]) -> list[dict]:
             changes.append({
                 "route": prev_route.name,
                 "type": "route_removed",
-                "message": f"Route no longer available: {prev_route.name}",
+                "message": f"线路已取消: {prev_route.name}",
             })
 
     return changes

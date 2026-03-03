@@ -203,10 +203,10 @@ def _build_single_flight_route(
             origin_name = a.city
             break
 
-    nonstop_label = "nonstop" if not ground else f"from {origin_name}"
+    nonstop_label = "直飞" if not ground else f"经{origin_name}"
 
     return Route(
-        name=f"{flight.flight_number} {flight.origin}→{dest_name} ({nonstop_label})",
+        name=f"{flight.flight_number} {flight.origin}→{dest_name}（{nonstop_label}）",
         ground_segments=list(ground),
         flight_legs=[flight],
         reliability=reliability,

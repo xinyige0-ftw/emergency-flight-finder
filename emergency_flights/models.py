@@ -120,16 +120,23 @@ class Route(BaseModel):
     def flight_hours(self) -> float:
         return sum(leg.duration_hours for leg in self.flight_legs)
 
+    _DAY_CN = {"Mon": "周一", "Tue": "周二", "Wed": "周三", "Thu": "周四",
+               "Fri": "周五", "Sat": "周六", "Sun": "周日"}
+
     @property
     def depart_ast(self) -> Optional[str]:
         if self.next_departure:
-            return self.next_departure.astimezone(AST).strftime("%a %b %d, %H:%M AST")
+            dt = self.next_departure.astimezone(AST)
+            day = self._DAY_CN.get(dt.strftime("%a"), dt.strftime("%a"))
+            return f"{day} {dt.strftime('%m-%d %H:%M')} 沙特时间"
         return None
 
     @property
     def arrive_cst(self) -> Optional[str]:
         if self.estimated_arrival:
-            return self.estimated_arrival.astimezone(CST).strftime("%a %b %d, %H:%M CST")
+            dt = self.estimated_arrival.astimezone(CST)
+            day = self._DAY_CN.get(dt.strftime("%a"), dt.strftime("%a"))
+            return f"{day} {dt.strftime('%m-%d %H:%M')} 北京时间"
         return None
 
 

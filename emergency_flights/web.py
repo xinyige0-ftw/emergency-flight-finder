@@ -421,7 +421,11 @@ def _route_to_dict(route: Route, now: datetime, flight_histories: dict) -> dict:
         if route.flight_legs:
             dest_tz = AIRPORT_TZ.get(route.flight_legs[-1].destination, 8)
         tz = timezone(timedelta(hours=dest_tz))
-        arrive_label = route.estimated_arrival.astimezone(tz).strftime("%a %H:%M") + " " + TZ_LABEL.get(dest_tz, "")
+        _day_cn = {"Mon": "周一", "Tue": "周二", "Wed": "周三", "Thu": "周四",
+                   "Fri": "周五", "Sat": "周六", "Sun": "周日"}
+        dt = route.estimated_arrival.astimezone(tz)
+        day = _day_cn.get(dt.strftime("%a"), dt.strftime("%a"))
+        arrive_label = f"{day} {dt.strftime('%H:%M')} {TZ_LABEL.get(dest_tz, '')}"
 
     return {
         "name": route.name,

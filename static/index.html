@@ -201,6 +201,12 @@ const STATUS_CN = {
 
 const AIRPORT_NAMES = {RUH:'利雅得', JED:'吉达', DMM:'达曼'};
 const AIRPORT_ORDER = ['RUH', 'JED', 'DMM'];
+const DAY_CN = {Mon:'周一',Tue:'周二',Wed:'周三',Thu:'周四',Fri:'周五',Sat:'周六',Sun:'周日',daily:'每日'};
+function toDaysCN(days) {
+  if (!days || !days.length) return '';
+  if (days.includes('daily')) return '每日';
+  return days.map(d => DAY_CN[d] || d).join('/');
+}
 
 function qs(id) { return document.getElementById(id); }
 
@@ -362,7 +368,7 @@ function renderFlightCard(route, conflictStart) {
   const priceStr = route.price_economy ? `¥${Math.round(route.price_economy * 7.2).toLocaleString()}` : '';
 
   const days = firstLeg.days || [];
-  const dayStr = days.includes('daily') ? '每日' : days.join('/');
+  const dayStr = toDaysCN(days);
 
   let cardId = 'card_' + flightNums.replace(/[^a-zA-Z0-9]/g, '_');
 
