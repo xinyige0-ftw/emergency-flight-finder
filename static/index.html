@@ -402,8 +402,8 @@ function renderFlightCard(route, conflictStart) {
       <div class="card-row2">
         <span>${routeStr}</span>
         <span class="route-arrow">·</span>
-        <span>${route.flight_hours}h${isMultiLeg ? ' · '+route.num_stops+'转' : ' 直飞'}</span>
-        <span class="time">${firstLeg.depart_local || firstLeg.depart_utc || ''}</span>
+        <span>${isMultiLeg ? route.num_stops+'转 · ' : '直飞 · '}飞行${route.flight_hours}h</span>
+        <span class="time">出发 ${firstLeg.depart_local || firstLeg.depart_utc || ''}</span>
       </div>
       ${dotsHtml}
       <div class="card-row4">

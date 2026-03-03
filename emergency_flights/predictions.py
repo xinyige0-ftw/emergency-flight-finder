@@ -349,6 +349,24 @@ def analyze_patterns(routes: list[Route]) -> list[dict]:
     return insights
 
 
+def _route_summary(route: Route) -> str:
+    """Format a route as '出发 HH:MM 沙特时间 · 飞行 Xh' for display."""
+    from .models import AST
+    parts = []
+    if route.next_departure:
+        local_dep = route.next_departure.astimezone(AST)
+        day_cn = {"Mon": "周一", "Tue": "周二", "Wed": "周三", "Thu": "周四",
+                  "Fri": "周五", "Sat": "周六", "Sun": "周日"}.get(
+            local_dep.strftime("%a"), local_dep.strftime("%a"))
+        parts.append(f"出发 {day_cn} {local_dep.strftime('%H:%M')} 沙特时间")
+    fh = route.flight_hours
+    if route.num_stops > 0:
+        parts.append(f"飞行 {fh:.0f}h（{route.num_stops}次中转）")
+    else:
+        parts.append(f"飞行 {fh:.0f}h 直飞")
+    return " · ".join(parts)
+
+
 def wait_vs_go_recommendation(routes: list[Route], scenario: Scenario) -> dict:
     """Recommend whether to book now or wait."""
     viable = sorted(
@@ -368,18 +386,19 @@ def wait_vs_go_recommendation(routes: list[Route], scenario: Scenario) -> dict:
     high_rel = [r for r in viable if r.reliability == ReliabilityScore.HIGH]
 
     if high_rel and high_rel[0].score < 25:
+        r = high_rel[0]
         return {
             "action": "go_now",
             "confidence": "high",
-            "reason": f"确认运营中: {high_rel[0].name}（约{high_rel[0].total_hours:.0f}小时）",
-            "recommended_route": high_rel[0].name,
+            "reason": f"确认运营中: {r.name} — {_route_summary(r)}",
+            "recommended_route": r.name,
         }
 
     if best.total_hours < 24 and best.reliability == ReliabilityScore.MEDIUM:
         return {
             "action": "go_now",
             "confidence": "medium",
-            "reason": f"最佳选择: {best.name}（约{best.total_hours:.0f}小时）。状态未确认，建议致电航司。",
+            "reason": f"最佳选择: {best.name} — {_route_summary(best)}。状态未确认，建议致电航司。",
             "recommended_route": best.name,
         }
 
@@ -398,7 +417,7 @@ def wait_vs_go_recommendation(routes: list[Route], scenario: Scenario) -> dict:
     return {
         "action": "go_now",
         "confidence": "medium",
-        "reason": f"建议选择 {best.name}（约{best.total_hours:.0f}小时），等待可能导致选择减少。",
+        "reason": f"建议选择 {best.name} — {_route_summary(best)}",
         "recommended_route": best.name,
     }
 
