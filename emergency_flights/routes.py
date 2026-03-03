@@ -47,6 +47,10 @@ PROXIMITY_ORDER = {
     ConflictProximity.BLOCKED: 3,
 }
 
+# Deprioritize routes via Africa / India — still shown, just ranked lower
+_DEPRIORITIZED_HUBS = {"ADD", "CAI", "DEL", "BOM"}
+_HUB_DEPRIORITY_PENALTY = 30
+
 
 def build_routes(
     scenario: Scenario,
@@ -351,6 +355,10 @@ def _score_and_sort(
 
         if route.price_economy_usd and route.price_economy_usd > budget:
             route.score += 50
+
+        if any(leg.origin in _DEPRIORITIZED_HUBS or leg.destination in _DEPRIORITIZED_HUBS
+               for leg in route.flight_legs[:-1]):
+            route.score += _HUB_DEPRIORITY_PENALTY
 
     cancelled = [r for r in routes if r.reliability == ReliabilityScore.LOW]
     viable = [r for r in routes if r.reliability != ReliabilityScore.LOW]

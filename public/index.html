@@ -10,119 +10,119 @@
 <title>沙特回国航班监控</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{font-size:15px}
+html{font-size:17px}
 body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue','Microsoft YaHei',sans-serif;background:#f5f6f8;color:#1a1a1a;padding-bottom:80px;line-height:1.5;-webkit-font-smoothing:antialiased}
 
 .header{background:#1a73e8;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:center}
-.header h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.5px}
-.header .time{font-size:11px;color:rgba(255,255,255,.8);text-align:right;line-height:1.4}
+.header h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:.5px}
+.header .time{font-size:13px;color:rgba(255,255,255,.85);text-align:right;line-height:1.4}
 
 .summary{display:flex;gap:0;background:#fff;border-bottom:1px solid #e8e8e8}
-.summary .stat{flex:1;text-align:center;padding:12px 4px;border-right:1px solid #f0f0f0}
+.summary .stat{flex:1;text-align:center;padding:14px 4px;border-right:1px solid #f0f0f0}
 .summary .stat:last-child{border-right:none}
-.summary .num{font-size:22px;font-weight:800;line-height:1.2}
-.summary .label{font-size:10px;color:#888;margin-top:2px}
+.summary .num{font-size:26px;font-weight:800;line-height:1.2}
+.summary .label{font-size:12px;color:#888;margin-top:2px}
 .num-green{color:#0d9b4a}
 .num-red{color:#d93025}
 .num-yellow{color:#e8a000}
 .num-gray{color:#999}
 
-.reco{padding:12px 16px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e8e8e8}
+.reco{padding:12px 16px;font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e8e8e8}
 .reco.go{background:#e6f4ea;color:#137333}
 .reco.wait{background:#fef7e0;color:#7c5800}
-.reco .reason{font-weight:400;font-size:12px;margin-top:2px;opacity:.85}
+.reco .reason{font-weight:400;font-size:14px;margin-top:2px;opacity:.85}
 
 .airspace{padding:10px 16px;background:#fff;border-bottom:1px solid #e8e8e8}
-.airspace h3{font-size:11px;color:#888;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.airspace h3{font-size:12px;color:#888;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
 .tags{display:flex;flex-wrap:wrap;gap:4px}
-.tag{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tag{padding:4px 10px;border-radius:4px;font-size:13px;font-weight:600}
 .tag.closed{background:#fce8e6;color:#c5221f}
 .tag.open{background:#e6f4ea;color:#137333}
 .tag.restricted{background:#fef7e0;color:#7c5800}
 
 .airport-tabs{display:flex;background:#fff;border-bottom:2px solid #e8e8e8;position:sticky;top:0;z-index:50}
-.airport-tab{flex:1;text-align:center;padding:12px 8px;cursor:pointer;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;transition:all .2s;user-select:none}
+.airport-tab{flex:1;text-align:center;padding:14px 8px;cursor:pointer;font-size:15px;font-weight:600;color:#888;border-bottom:3px solid transparent;transition:all .2s;user-select:none}
 .airport-tab.active{color:#1a73e8;border-bottom-color:#1a73e8;background:#f0f6ff}
-.airport-tab .tab-code{font-size:16px;font-weight:800;display:block;line-height:1.3}
-.airport-tab .tab-city{font-size:10px;font-weight:500;display:block}
-.airport-tab .tab-count{font-size:10px;color:#aaa;display:block;margin-top:1px}
+.airport-tab .tab-code{font-size:20px;font-weight:800;display:block;line-height:1.3}
+.airport-tab .tab-city{font-size:13px;font-weight:500;display:block}
+.airport-tab .tab-count{font-size:12px;color:#aaa;display:block;margin-top:1px}
 .airport-tab.active .tab-count{color:#1a73e8}
 
 .filter-bar{background:#fff;border-bottom:1px solid #e8e8e8;padding:8px 12px;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center}
 .filter-bar::-webkit-scrollbar{display:none}
-.filter-bar select{background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;padding:7px 10px;font-size:12px;min-height:36px;cursor:pointer}
-.filter-bar button{border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;min-height:36px;cursor:pointer;flex-shrink:0}
+.filter-bar select{background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;padding:8px 12px;font-size:14px;min-height:40px;cursor:pointer}
+.filter-bar button{border:none;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:600;min-height:40px;cursor:pointer;flex-shrink:0}
 .btn-live{background:#1a73e8;color:#fff}
 .btn-auto{background:#f0f0f0;color:#555;border:1px solid #ddd}
 .btn-auto.on{background:#e6f4ea;color:#0d9b4a;border-color:#0d9b4a}
 
-.flight-card{background:#fff;margin:6px 10px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;border:1px solid #e8e8e8}
+.flight-card{background:#fff;margin:8px 10px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;border:1px solid #e8e8e8}
 .flight-card.changed{border-color:#d93025;box-shadow:0 0 0 2px rgba(217,48,37,.15)}
 
-.card-top{padding:12px 14px;cursor:pointer;user-select:none}
+.card-top{padding:14px 16px;cursor:pointer;user-select:none}
 .card-row1{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.flight-num{font-size:15px;font-weight:700;color:#1a1a1a}
-.airline-name{font-size:12px;color:#666}
-.status-badge{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;margin-left:auto;flex-shrink:0}
+.flight-num{font-size:17px;font-weight:700;color:#1a1a1a}
+.airline-name{font-size:14px;color:#666}
+.status-badge{padding:4px 10px;border-radius:4px;font-size:13px;font-weight:700;margin-left:auto;flex-shrink:0}
 .status-badge.operating,.status-badge.landed{background:#e6f4ea;color:#0d9b4a}
 .status-badge.scheduled{background:#e8f0fe;color:#1a73e8}
 .status-badge.cancelled{background:#fce8e6;color:#d93025}
 .status-badge.delayed{background:#fef7e0;color:#e8a000}
 .status-badge.unknown{background:#f0f0f0;color:#999}
 
-.card-row2{display:flex;align-items:center;font-size:13px;color:#444;gap:6px}
-.route-arrow{color:#999;font-size:11px}
-.card-row2 .time{color:#888;font-size:11px;margin-left:auto}
+.card-row2{display:flex;align-items:center;font-size:15px;color:#444;gap:6px}
+.route-arrow{color:#999;font-size:13px}
+.card-row2 .time{color:#888;font-size:13px;margin-left:auto}
 
-.card-row3{display:flex;align-items:center;gap:4px;margin-top:8px}
-.history-label{font-size:10px;color:#999;flex-shrink:0}
-.history-dots{display:flex;gap:2px;flex-wrap:wrap}
-.dot{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+.card-row3{display:flex;align-items:center;gap:5px;margin-top:10px}
+.history-label{font-size:12px;color:#999;flex-shrink:0}
+.history-dots{display:flex;gap:3px;flex-wrap:wrap}
+.dot{width:16px;height:16px;border-radius:3px;flex-shrink:0}
 .dot.operating,.dot.landed{background:#0d9b4a}
 .dot.cancelled{background:#d93025}
 .dot.delayed{background:#e8a000}
 .dot.scheduled{background:#a8c7fa}
 .dot.unknown,.dot.none{background:#e0e0e0}
-.dot-date{font-size:8px;color:#999;text-align:center;line-height:1}
+.dot-date{font-size:10px;color:#999;text-align:center;line-height:1}
 
-.card-row4{display:flex;align-items:center;gap:6px;margin-top:6px}
-.price{font-size:13px;font-weight:600;color:#0d9b4a}
-.days-badge{font-size:10px;color:#888;background:#f5f5f5;padding:2px 6px;border-radius:3px}
-.changed-badge{font-size:10px;font-weight:700;color:#d93025;background:#fce8e6;padding:2px 6px;border-radius:3px}
+.card-row4{display:flex;align-items:center;gap:6px;margin-top:8px}
+.price{font-size:15px;font-weight:600;color:#0d9b4a}
+.days-badge{font-size:12px;color:#888;background:#f5f5f5;padding:2px 8px;border-radius:3px}
+.changed-badge{font-size:12px;font-weight:700;color:#d93025;background:#fce8e6;padding:2px 8px;border-radius:3px}
 
-.card-detail{display:none;padding:0 14px 14px;font-size:13px;border-top:1px solid #f0f0f0}
+.card-detail{display:none;padding:0 16px 16px;font-size:15px;border-top:1px solid #f0f0f0}
 .card-detail.open{display:block}
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .detail-item{display:flex;flex-direction:column}
-.detail-item .dl{font-size:10px;color:#999;text-transform:uppercase}
-.detail-item .dv{font-size:13px;color:#333;font-weight:500}
+.detail-item .dl{font-size:12px;color:#999;text-transform:uppercase}
+.detail-item .dv{font-size:15px;color:#333;font-weight:500}
 
-.leg-connector{text-align:center;padding:6px 0;font-size:11px;color:#e8a000;font-weight:600}
+.leg-connector{text-align:center;padding:8px 0;font-size:13px;color:#e8a000;font-weight:600}
 
-.detail-actions{display:flex;gap:8px;margin-top:12px}
-.detail-actions a{flex:1;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px}
+.detail-actions{display:flex;gap:8px;margin-top:14px}
+.detail-actions a{flex:1;text-align:center;padding:12px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px}
 .btn-book{background:#1a73e8;color:#fff}
 .btn-call{background:#f0f0f0;color:#333}
 
-.visa-note{margin-top:8px;padding:8px 10px;border-radius:6px;font-size:12px;border-left:3px solid #e8a000;background:#fffbeb}
+.visa-note{margin-top:8px;padding:8px 10px;border-radius:6px;font-size:14px;border-left:3px solid #e8a000;background:#fffbeb}
 .visa-note.ok{border-color:#0d9b4a;background:#f0faf4}
 
 .wa-section{margin:10px;padding:16px;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid #e8e8e8}
-.wa-section h3{font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.wa-section h3{font-size:16px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .wa-input-row{display:flex;gap:8px}
-.wa-input-row input{flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;min-height:44px}
-.wa-input-row button{padding:10px 16px;border:none;border-radius:8px;font-weight:700;font-size:13px;color:#fff;background:#25d366;cursor:pointer;min-height:44px;flex-shrink:0}
-.wa-result{margin-top:8px;font-size:12px}
-.wa-steps{font-size:12px;color:#666;line-height:1.8;margin-top:8px}
+.wa-input-row input{flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:8px;font-size:16px;min-height:48px}
+.wa-input-row button{padding:12px 18px;border:none;border-radius:8px;font-weight:700;font-size:15px;color:#fff;background:#25d366;cursor:pointer;min-height:48px;flex-shrink:0}
+.wa-result{margin-top:10px;font-size:14px}
+.wa-steps{font-size:14px;color:#666;line-height:1.8;margin-top:8px}
 
-.footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e0e0e0;padding:8px 16px;padding-bottom:calc(8px + env(safe-area-inset-bottom));z-index:60;display:flex;justify-content:space-between;align-items:center}
-.footer-bar .info{font-size:11px;color:#999}
-.footer-bar button{background:#1a73e8;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;min-height:40px;cursor:pointer}
+.footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e0e0e0;padding:10px 16px;padding-bottom:calc(10px + env(safe-area-inset-bottom));z-index:60;display:flex;justify-content:space-between;align-items:center}
+.footer-bar .info{font-size:13px;color:#999}
+.footer-bar button{background:#1a73e8;color:#fff;border:none;padding:12px 22px;border-radius:8px;font-weight:700;font-size:15px;min-height:44px;cursor:pointer}
 
-.empty{text-align:center;padding:40px 16px;color:#999;font-size:13px}
-.warn{padding:8px 16px;font-size:11px;text-align:center;color:#888;background:#fef7e0;border-bottom:1px solid #e8e8e8}
+.empty{text-align:center;padding:40px 16px;color:#999;font-size:15px}
+.warn{padding:10px 16px;font-size:13px;text-align:center;color:#888;background:#fef7e0;border-bottom:1px solid #e8e8e8}
 
-.section-title{padding:10px 16px 4px;font-size:11px;font-weight:700;color:#888;letter-spacing:.5px}
+.section-title{padding:12px 16px 4px;font-size:13px;font-weight:700;color:#888;letter-spacing:.5px}
 
 .airport-group{display:none}
 .airport-group.active{display:block}
@@ -168,7 +168,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
 <div class="section-title">WhatsApp 实时通知</div>
 <div class="wa-section">
   <h3>💬 航班变化通知</h3>
-  <p style="font-size:12px;color:#666;margin-bottom:6px">航班取消、延误、恢复运营或价格变动时，第一时间通过WhatsApp通知您。</p>
+  <p style="font-size:14px;color:#666;margin-bottom:8px">航班取消、延误、恢复运营或价格变动时，第一时间通过WhatsApp通知您。</p>
   <div class="wa-steps">
     使用WhatsApp商业号推送，无需加入沙盒，输入号码即可订阅。
   </div>
@@ -378,7 +378,7 @@ function renderFlightCard(route, conflictStart) {
     </div>`;
 
     if (l.price_economy) {
-      detailHtml += `<div style="margin-top:6px;font-size:12px;color:#666">经济舱 ${cnyEco} · 商务舱 ${cnyBiz}</div>`;
+      detailHtml += `<div style="margin-top:8px;font-size:14px;color:#666">经济舱 ${cnyEco} · 商务舱 ${cnyBiz}</div>`;
     }
 
     const bookUrl = l.booking_url || `https://www.google.com/travel/flights?q=${encodeURIComponent(l.from+' to '+l.to+' one way')}`;
