@@ -54,7 +54,7 @@ def _get_whatsapp_recipients() -> list[str]:
     return []
 
 
-WHATSAPP_CONTENT_SID = os.environ.get("WHATSAPP_CONTENT_SID", "HX2238fa5df250b29a9158e67929229e0a")
+WHATSAPP_CONTENT_SID = os.environ.get("WHATSAPP_CONTENT_SID", "HXd6e8b9850193b1b924b4ddb9491676a1")
 
 
 class AlertConfig:
@@ -229,7 +229,8 @@ async def _send_twilio_sms(config: AlertConfig, to: str, body: str):
 
 
 async def _send_twilio_whatsapp(config: AlertConfig, to: str, body: str):
-    """Send WhatsApp via Twilio Content API template (business-initiated, no 24h window)."""
+    """Send WhatsApp alert. Tries Content API template first (works outside 24h window);
+    falls back to free-form session message if template is not yet approved."""
     import json as _json
     import httpx
     url = f"https://api.twilio.com/2010-04-01/Accounts/{config.twilio_sid}/Messages.json"
@@ -238,23 +239,35 @@ async def _send_twilio_whatsapp(config: AlertConfig, to: str, body: str):
         wa_from = f"whatsapp:{wa_from}"
     wa_to = f"whatsapp:{to}" if not to.startswith("whatsapp:") else to
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    content_vars = _json.dumps({"1": timestamp, "2": "1", "3": body})
-
     async with httpx.AsyncClient(timeout=10) as client:
+        # Attempt 1: Content API template (business-initiated, no 24h window needed)
+        if config.content_sid:
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+            content_vars = _json.dumps({"1": f"{body} ({timestamp})"})
+            resp = await client.post(
+                url,
+                auth=(config.twilio_sid, config.twilio_token),
+                data={
+                    "From": wa_from,
+                    "To": wa_to,
+                    "ContentSid": config.content_sid,
+                    "ContentVariables": content_vars,
+                },
+            )
+            if resp.status_code in (200, 201):
+                console.print(f"[green]WhatsApp (template) sent to {to}[/green]")
+                return
+
+        # Attempt 2: free-form session message (works within 24h of user opt-in)
+        full_body = f"【沙特回国航班监控】\n\n{body}\n\n— 自动推送"
         resp = await client.post(
             url,
             auth=(config.twilio_sid, config.twilio_token),
-            data={
-                "From": wa_from,
-                "To": wa_to,
-                "ContentSid": config.content_sid,
-                "ContentVariables": content_vars,
-            },
+            data={"From": wa_from, "To": wa_to, "Body": full_body},
         )
         if resp.status_code not in (200, 201):
             raise Exception(f"Twilio WhatsApp failed: {resp.status_code} {resp.text[:200]}")
-    console.print(f"[green]WhatsApp sent to {to}[/green]")
+    console.print(f"[green]WhatsApp (session) sent to {to}[/green]")
 
 
 def print_alert_status(config: AlertConfig):
