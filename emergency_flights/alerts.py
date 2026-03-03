@@ -11,6 +11,8 @@ from typing import Optional
 from rich.console import Console
 
 from .models import Route
+from .supabase_store import is_configured as _supabase_configured
+from .supabase_store import alert_subscriptions_load as _subs_load_sb
 
 console = Console(stderr=True)
 
@@ -20,7 +22,7 @@ SUBSCRIPTIONS_FILE = Path.home() / ".evac_alert_subscriptions.json"
 
 
 def _load_subscriptions() -> dict:
-    """Load persisted alert subscription (e.g. WhatsApp number)."""
+    """Load persisted alert subscription (file fallback when no Supabase)."""
     if SUBSCRIPTIONS_FILE.exists():
         try:
             return json.loads(SUBSCRIPTIONS_FILE.read_text())
@@ -35,6 +37,21 @@ def _save_subscriptions(data: dict) -> None:
         SUBSCRIPTIONS_FILE.write_text(json.dumps(data))
     except Exception:
         pass
+
+
+def _get_whatsapp_recipients() -> list[str]:
+    """Supabase-backed when configured, else file/env."""
+    if _supabase_configured():
+        phones = _subs_load_sb()
+        if phones:
+            return phones
+    env_phone = (os.environ.get("EVAC_ALERT_WHATSAPP") or "").strip()
+    if env_phone:
+        return [env_phone]
+    file_phone = (_load_subscriptions().get("whatsapp") or "").strip()
+    if file_phone:
+        return [file_phone]
+    return []
 
 
 WHATSAPP_CONTENT_SID = os.environ.get("WHATSAPP_CONTENT_SID", "HX245a5624880424408683e063780a448f")
@@ -60,23 +77,33 @@ class AlertConfig:
             "TWILIO_WHATSAPP_FROM", "whatsapp:+15558376873"
         )
         self.phone_to = phone_to or os.environ.get("EVAC_ALERT_PHONE", "")
-        self.whatsapp_to = whatsapp_to or os.environ.get("EVAC_ALERT_WHATSAPP", "")
-        if not self.whatsapp_to:
-            subs = _load_subscriptions()
-            self.whatsapp_to = (subs.get("whatsapp") or "").strip()
+        self._whatsapp_to_override = whatsapp_to or ""
         self.enabled = enabled
         self.cooldown = cooldown
         self.content_sid = content_sid or WHATSAPP_CONTENT_SID
 
     @property
+    def whatsapp_recipients(self) -> list[str]:
+        """Supabase + file/env; supports multiple subscribers."""
+        if self._whatsapp_to_override:
+            return [self._whatsapp_to_override]
+        return _get_whatsapp_recipients()
+
+    @property
+    def whatsapp_to(self) -> str:
+        """Single recipient for backward compat; first from list."""
+        r = self.whatsapp_recipients
+        return r[0] if r else ""
+
+    @property
     def is_configured(self) -> bool:
         if not (self.twilio_sid and self.twilio_token):
             return False
-        if not (self.phone_to or self.whatsapp_to):
+        if not (self.phone_to or self.whatsapp_recipients):
             return False
         if self.phone_to and not self.twilio_from:
             return False
-        if self.whatsapp_to and not self.twilio_whatsapp_from:
+        if self.whatsapp_recipients and not self.twilio_whatsapp_from:
             return False
         return True
 
@@ -176,8 +203,8 @@ async def send_alerts(changes: list[dict], config: AlertConfig) -> int:
             if config.phone_to:
                 await _send_twilio_sms(config, config.phone_to, body)
                 sent += 1
-            if config.whatsapp_to:
-                await _send_twilio_whatsapp(config, config.whatsapp_to, body)
+            for phone in config.whatsapp_recipients:
+                await _send_twilio_whatsapp(config, phone, body)
                 sent += 1
             state[key] = now
         except Exception as e:

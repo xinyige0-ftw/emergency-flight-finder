@@ -90,3 +90,33 @@ def rides_save(ride: dict) -> bool:
 
 def is_configured() -> bool:
     return _client() is not None
+
+
+_ALERT_SUBS_TABLE = "flight_alert_subscriptions"
+
+
+def alert_subscriptions_load() -> list[str]:
+    """Return list of active WhatsApp phone numbers for alerts."""
+    c = _client()
+    if not c:
+        return []
+    try:
+        r = c.table(_ALERT_SUBS_TABLE).select("phone").eq("active", True).execute()
+        return [row["phone"] for row in (r.data or []) if row.get("phone")]
+    except Exception:
+        return []
+
+
+def alert_subscriptions_add(phone: str, channel: str = "whatsapp") -> bool:
+    """Add or reactivate a subscription. Returns True if saved."""
+    c = _client()
+    if not c:
+        return False
+    try:
+        c.table(_ALERT_SUBS_TABLE).upsert(
+            {"phone": phone, "channel": channel, "active": True},
+            on_conflict="phone",
+        ).execute()
+        return True
+    except Exception:
+        return False

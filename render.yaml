@@ -9,3 +9,16 @@ services:
         value: "3.11"
     plan: free
     autoDeploy: true
+
+  # Optional: cron pings /api/routes?live=true so change detection + WhatsApp alerts run
+  # without needing the page open. Set env CRON_SERVICE_URL (e.g. https://saudi-flight-monitor.onrender.com).
+  # ~$1/mo for cron; remove this block if not needed.
+  - type: cron
+    name: flight-monitor-ping
+    runtime: python
+    schedule: "*/15 * * * *"
+    buildCommand: "true"
+    startCommand: python scripts/cron_ping.py
+    envVars:
+      - key: CRON_SERVICE_URL
+        sync: false

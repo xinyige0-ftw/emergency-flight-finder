@@ -136,7 +136,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
 </div>
 
 <div class="summary" id="summaryBar">
-  <div class="stat"><div class="num num-green" id="countOk">-</div><div class="label">正常运营</div></div>
+  <div class="stat"><div class="num num-green" id="countOk">-</div><div class="label">正常/计划</div></div>
   <div class="stat"><div class="num num-red" id="countCancel">-</div><div class="label">已取消</div></div>
   <div class="stat"><div class="num num-yellow" id="countDelay">-</div><div class="label">延误</div></div>
   <div class="stat"><div class="num num-gray" id="countTotal">-</div><div class="label">总航班</div></div>
@@ -253,7 +253,7 @@ function render(data) {
     if (!countedFlights.has(firstLeg.flight)) {
       countedFlights.add(firstLeg.flight);
       cTotal++;
-      if (firstLeg.status === 'operating' || firstLeg.status === 'landed') cOk++;
+      if (['operating','landed','scheduled','unknown'].includes(firstLeg.status)) cOk++;
       else if (firstLeg.status === 'cancelled') cCancel++;
       else if (firstLeg.status === 'delayed') cDelay++;
     }
@@ -475,7 +475,7 @@ function toggleAuto() {
   autoRefresh = !autoRefresh;
   qs('autoBtn').textContent = autoRefresh ? '自动:开' : '自动:关';
   qs('autoBtn').classList.toggle('on', autoRefresh);
-  if (autoRefresh) loadData(false);
+  if (autoRefresh) loadData(true);
   else { clearInterval(countdownTimer); qs('footerInfo').textContent = ''; }
 }
 
@@ -486,7 +486,7 @@ function startCountdown(seconds) {
     countdown--;
     const m = Math.floor(countdown/60), s = countdown%60;
     qs('footerInfo').textContent = `下次刷新: ${m}分${s.toString().padStart(2,'0')}秒`;
-    if (countdown <= 0) { clearInterval(countdownTimer); loadData(false); }
+    if (countdown <= 0) { clearInterval(countdownTimer); loadData(true); }
   }, 1000);
 }
 

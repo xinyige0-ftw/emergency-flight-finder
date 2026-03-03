@@ -24,6 +24,8 @@ destination:
   preferred_cities:
     - code: "PEK"
       name: "北京"
+    - code: "PKX"
+      name: "北京大兴"
     - code: "PVG"
       name: "上海"
     - code: "CAN"
@@ -218,6 +220,22 @@ known_flights:
     booking_url: "https://www.saudia.com/"
     price_economy_usd: 720
     price_business_usd: 3200
+    conflict_proximity: "low"
+
+  # 达曼 → 北京大兴 直飞 (SV886 经吉达延伸，DMM-PKX 段直飞)
+  - flight_number: "SV886"
+    airline: "沙特航空"
+    origin: "DMM"
+    destination: "PKX"
+    days: ["Mon", "Fri"]
+    depart_utc: "05:50"
+    arrive_utc: "19:15"
+    duration_hours: 10.5
+    aircraft: "787-9"
+    contact: "+966 9200 22222"
+    booking_url: "https://www.saudia.com/"
+    price_economy_usd: 750
+    price_business_usd: 3400
     conflict_proximity: "low"
 
   # ══════════════════════════════════════════════════

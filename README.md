@@ -39,6 +39,19 @@ evac find -s saudi_to_china --watch
 evac status CZ5008
 ```
 
+## 实时监控与 WhatsApp 通知
+
+**监控机制：**
+- 变更检测和 WhatsApp 推送仅在**有请求访问 `/api/routes?live=true` 时**执行
+- 页面「自动:开」每 2 分钟请求一次，但默认使用 `live=false`（不拉取 FlightRadar24 实时数据），因此几乎不会触发变更告警
+- 只有手动点击「实时刷新」会触发 `live=true`，此时才会拉取最新航班状态并可能发送 WhatsApp
+- **如需 24 小时后台监控**：在 Render 中启用 cron 服务 `flight-monitor-ping`，设置 `CRON_SERVICE_URL=https://你的域名.onrender.com`，cron 每 15 分钟请求一次，即可在无人打开页面时持续监控并发送告警（约 $1/月）
+
+**订阅持久化：**
+- 需配置 `SUPABASE_URL` + `SUPABASE_KEY`，并在 Supabase 执行 `supabase_schema.sql` 创建 `flight_alert_subscriptions` 表
+- 订阅数据会写入 Supabase，部署重启后仍保留
+- 未配置 Supabase 时，订阅会写入本地文件，在 Render 等无状态环境中会在重启后丢失
+
 ## WhatsApp 通知
 
 WhatsApp 订阅入口默认隐藏，需在 Twilio 提交并获批 Content API 模板后再启用。

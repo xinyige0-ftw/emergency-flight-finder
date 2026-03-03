@@ -18,6 +18,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from .alerts import AlertConfig, detect_changes, send_alerts, _send_twilio_whatsapp, _send_twilio_sms, _save_subscriptions
+from .supabase_store import is_configured as _supabase_configured, alert_subscriptions_add as _subs_add_sb
 from .crowdsource import fetch_all_crowdsource
 from .community import get_translations, list_scenarios_available
 from .config import load_scenario
@@ -308,6 +309,8 @@ async def api_subscribe_alerts(request: Request):
     if not phone or not phone.startswith("+"):
         return JSONResponse({"ok": False, "error": "手机号必须以+开头"}, status_code=400)
 
+    if _supabase_configured():
+        _subs_add_sb(phone, "whatsapp")
     _save_subscriptions({"whatsapp": phone})
     os.environ["EVAC_ALERT_WHATSAPP"] = phone
     return JSONResponse({"ok": True, "message": f"已订阅，航班变化时将通过WhatsApp通知{phone}"})
@@ -321,7 +324,7 @@ async def api_translations(lang: str = "zh"):
 AIRPORT_TZ = {
     "DMM": 3, "RUH": 3, "JED": 3,
     "IST": 3, "MCT": 4,
-    "PEK": 8, "PVG": 8, "CAN": 8, "SZX": 8, "HKG": 8,
+    "PEK": 8, "PKX": 8, "PVG": 8, "CAN": 8, "SZX": 8, "HKG": 8,
     "CTU": 8, "XIY": 8, "KMG": 8, "XMN": 8,
     "BKK": 7, "SIN": 8, "KUL": 8,
     "DEL": 5.5, "BOM": 5.5,
