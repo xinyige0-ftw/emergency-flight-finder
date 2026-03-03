@@ -39,16 +39,21 @@ evac find -s saudi_to_china --watch
 evac status CZ5008
 ```
 
-## WhatsApp 通知设置
+## WhatsApp 通知
 
-1. 在 WhatsApp 中发送 `join spoken-yet` 到 `+1 (415) 523-8886`
-2. 设置环境变量：
+WhatsApp 订阅入口默认隐藏，需在 Twilio 提交并获批 Content API 模板后再启用。
+
+**启用步骤：**
+1. 在 Twilio Console → Messaging → Content Templates 创建模板，3 个变量：`{{1}}` 时间戳，`{{2}}` 数量，`{{3}}` 正文
+2. 提交 Meta 审批，获批后设置环境变量：
    ```
    TWILIO_ACCOUNT_SID=your_sid
    TWILIO_AUTH_TOKEN=your_token
-   TWILIO_WHATSAPP_FROM=+14155238886
+   TWILIO_WHATSAPP_FROM=whatsapp:+15558376873
+   WHATSAPP_CONTENT_SID=HXxxx  # 获批的模板 SID
+   WHATSAPP_ALERTS_ENABLED=true
    ```
-3. 在网页中输入手机号并订阅
+3. 网页将显示订阅入口，用户输入手机号即可订阅
 
 ## 部署
 

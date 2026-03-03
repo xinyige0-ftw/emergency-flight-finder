@@ -165,19 +165,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
 
 <div id="flightsContainer"><div class="empty">正在加载航班数据...</div></div>
 
-<div class="section-title">WhatsApp 实时通知</div>
-<div class="wa-section">
-  <h3>💬 航班变化通知</h3>
-  <p style="font-size:14px;color:#666;margin-bottom:8px">航班取消、延误、恢复运营或价格变动时，第一时间通过WhatsApp通知您。</p>
-  <div class="wa-steps">
-    使用WhatsApp商业号推送，无需加入沙盒，输入号码即可订阅。
+<div id="waSectionWrap" style="display:none">
+  <div class="section-title">WhatsApp 实时通知</div>
+  <div class="wa-section">
+    <h3>💬 航班变化通知</h3>
+    <p style="font-size:14px;color:#666;margin-bottom:8px">航班取消、延误、恢复运营或价格变动时，第一时间通过WhatsApp通知您。</p>
+    <div class="wa-steps">
+      使用WhatsApp商业号推送，无需加入沙盒，输入号码即可订阅。
+    </div>
+    <div class="wa-input-row" style="margin-top:10px">
+      <input type="tel" id="waPhone" placeholder="+8613812345678">
+      <button onclick="testWA()">测试</button>
+      <button onclick="subscribeWA()" style="background:#1a73e8">订阅</button>
+    </div>
+    <div class="wa-result" id="waResult"></div>
   </div>
-  <div class="wa-input-row" style="margin-top:10px">
-    <input type="tel" id="waPhone" placeholder="+8613812345678">
-    <button onclick="testWA()">测试</button>
-    <button onclick="subscribeWA()" style="background:#1a73e8">订阅</button>
-  </div>
-  <div class="wa-result" id="waResult"></div>
 </div>
 
 <div class="warn">航班信息变化迅速，请务必与航空公司确认。数据来源：FlightRadar24</div>
@@ -490,6 +492,13 @@ function startCountdown(seconds) {
 
 ['sortBy','maxStops'].forEach(id => qs(id).addEventListener('change', () => loadData(false)));
 loadData(false);
+(async function checkWhatsAppStatus(){
+  try {
+    const res = await fetch(`${API}/alerts/status`);
+    const data = await res.json().catch(() => ({}));
+    if (data.whatsapp_enabled) qs('waSectionWrap').style.display = '';
+  } catch(e) {}
+})();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>
 </body>

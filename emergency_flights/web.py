@@ -248,6 +248,16 @@ async def list_scenarios():
     return JSONResponse({"scenarios": list_scenarios_available(SCENARIOS_DIR)})
 
 
+@app.get("/api/alerts/status")
+async def api_alerts_status():
+    """Returns whether WhatsApp alerts UI should be shown (templates approved + Twilio configured)."""
+    config = AlertConfig()
+    enabled = os.environ.get("WHATSAPP_ALERTS_ENABLED", "").lower() == "true"
+    return JSONResponse({
+        "whatsapp_enabled": enabled and bool(config.twilio_sid and config.twilio_token),
+    })
+
+
 @app.post("/api/alerts/test")
 async def api_test_alert(request: Request):
     ip = _client_ip(request)
