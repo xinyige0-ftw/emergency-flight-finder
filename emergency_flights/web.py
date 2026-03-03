@@ -28,6 +28,7 @@ from .predictions import (
     analyze_patterns, check_all_transit_visas, get_historical_context,
     record_status_snapshot, wait_vs_go_recommendation,
     get_all_flight_histories, get_daily_summary, seed_initial_history,
+    apply_historical_statuses,
 )
 from .pricing import check_prices_and_seats, filter_by_budget, check_multi_passenger_availability
 from .routes import build_routes
@@ -139,6 +140,10 @@ async def get_routes(
 
     routes = build_routes(sc, now=now, previous_routes=_previous_routes or None,
                           speed_mode=speed, max_stops=max_stops, max_wait_hours=max_wait)
+
+    # Apply seed/historical statuses to flights still at default "scheduled"
+    for route in routes:
+        apply_historical_statuses(route.flight_legs)
 
     if not show_cancelled:
         routes = [r for r in routes if r.reliability.value != "low"]

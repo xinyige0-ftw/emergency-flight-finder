@@ -176,6 +176,29 @@ def seed_initial_history():
         _save_history(history)
 
 
+def apply_historical_statuses(flights: list) -> list:
+    """Override default 'scheduled' status with today's seed/historical data.
+    Accepts a list of FlightLeg objects and mutates their .status in-place."""
+    from .models import FlightStatus
+    today_key = datetime.now(timezone.utc).date().isoformat()
+    history = _load_history()
+    all_flights = history.get("flights", {})
+
+    for flight in flights:
+        fn = getattr(flight, "flight_number", None)
+        if not fn:
+            continue
+        flight_hist = all_flights.get(fn, {})
+        today_entry = flight_hist.get(today_key, {})
+        hist_status = today_entry.get("status")
+        if hist_status and flight.status == FlightStatus.SCHEDULED:
+            try:
+                flight.status = FlightStatus(hist_status)
+            except ValueError:
+                pass
+    return flights
+
+
 def record_flight_status(flight_number: str, status: str, check_date: Optional[date] = None):
     """Record a single flight's status for a given date."""
     if check_date is None:
@@ -195,7 +218,9 @@ def record_flight_status(flight_number: str, status: str, check_date: Optional[d
 
 
 def record_all_flight_statuses(routes: list[Route]):
-    """Record status of every flight leg in the current route set."""
+    """Record status of every flight leg in the current route set.
+    Preserves seed data: won't overwrite a meaningful status (e.g. 'cancelled')
+    with a default 'scheduled'."""
     today = datetime.now(timezone.utc).date()
     history = _load_history()
     flights = history.setdefault("flights", {})
@@ -204,8 +229,18 @@ def record_all_flight_statuses(routes: list[Route]):
         for leg in route.flight_legs:
             flight_data = flights.setdefault(leg.flight_number, {})
             date_key = today.isoformat()
+            existing = flight_data.get(date_key, {})
+            existing_status = existing.get("status")
+            new_status = leg.status.value
+
+            # Don't overwrite a concrete status (cancelled/delayed/operating/landed)
+            # with the default 'scheduled' or 'unknown'
+            if existing_status and existing_status not in ("scheduled", "unknown") \
+                    and new_status in ("scheduled", "unknown"):
+                continue
+
             flight_data[date_key] = {
-                "status": leg.status.value,
+                "status": new_status,
                 "checked_at": datetime.now(timezone.utc).isoformat(),
             }
 
